@@ -10,6 +10,8 @@
 (defn ^:export add-numbers [a b]
   (+ a b))
 
-(defn -main [& args])
+(defn -main [& args]
+  (println "Helloworld:" (add-numbers 1 2))
+)
 
 (set! *main-cli-fn* -main)

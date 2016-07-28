@@ -6,6 +6,11 @@ FIXME: Write a one-line description of your library/project.
 
 FIXME: Write a paragraph about the library/project and highlight its goals.
 
+## run!
+```
+node release/hello_npm.js
+```
+
 ## Setup
 
 Most of the following scripts require [rlwrap](http://utopia.knoware.nl/~hlub/uck/rlwrap/) (on OS X installable via brew).

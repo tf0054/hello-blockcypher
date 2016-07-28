@@ -6,9 +6,10 @@
                   :exclusion [org.clojure/data.json]]
                  [org.clojure/data.json "0.2.6" :classifier "aot"]]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
-  :plugins [[lein-npm "0.6.1"]
+  :plugins [[lein-npm "0.6.2"]
             [lein-cljsbuild "1.1.2"]]
   :npm {:dependencies [[source-map-support "0.3.2"]]}
+; :main "release/hello_npm.js"
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release"]
   :target-path "target"
