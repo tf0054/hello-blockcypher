@@ -8,6 +8,7 @@ FIXME: Write a paragraph about the library/project and highlight its goals.
 
 ## run!
 ```
+lein deps
 node release/hello_npm.js
 ```
 
