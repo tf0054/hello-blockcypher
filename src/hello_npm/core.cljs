@@ -11,7 +11,7 @@
   (+ a b))
 
 (defn -main [& args]
-  (println "Helloworld:" (add-numbers 1 2))
+  (println "Helloworld:" (add-numbers 1 2) ":" args ";")
 )
 
 (set! *main-cli-fn* -main)
