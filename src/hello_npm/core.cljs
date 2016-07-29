@@ -11,11 +11,19 @@
 (def web3 (nodejs/require "web3"))
 
 (defn -main [& args]
-(println ":" (.HttpProvider (.-providers web3) "http://172.17.0.2:8545"))
-(println ":" web3)
-(println ":" (js->clj web3))
-(println ":" (web3 (.-providers web3)))
-)
+    (let [web3conn (web3.)
+          web3prov (web3.providers.HttpProvider. "http://localhost:8545")]
+        ; init
+        ;   web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
+        (.setProvider web3conn web3prov)
+        ; exec
+        (let [coinbase (.-coinbase (.-eth web3conn))
+              balance (.getBalance (.-eth web3conn) coinbase)]
+            (println "coinbase:" coinbase)
+            (println "balance: " (.toFormat balance 2))
+            )
+        )
+    )
 
 (defn -main2 [& args]
   (if (nil? args)
