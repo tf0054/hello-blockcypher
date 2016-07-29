@@ -14,8 +14,11 @@
   (+ a b))
 
 (defn -main [& args]
-  (.ping ping "www.google.com" #(println "ping:" %))
-  (println "Helloworld:" (add-numbers 1 2) ":" args ";")
+  (if (nil? args)
+    (println "hostname is needed as a agrs")
+    (.probe (.-sys ping)
+      (nth args 0)
+      #(println "ping(" (nth args 0) "):" %)) )
 )
 
 (set! *main-cli-fn* -main)

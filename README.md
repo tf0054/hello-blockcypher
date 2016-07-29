@@ -7,6 +7,7 @@ FIXME: Write a one-line description of your library/project.
 FIXME: Write a paragraph about the library/project and highlight its goals.
 
 ## run!
+https://www.npmjs.com/package/ping
 ```
 lein deps
 node release/hello_npm.js
