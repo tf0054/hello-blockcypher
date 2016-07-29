@@ -10,6 +10,11 @@
             [lein-cljsbuild "1.1.2"]
     ]
   :npm {:dependencies [[source-map-support "0.3.2"]
+["xmlhttprequest" "1.8.0"]
+["utf8" "2.1.1"]
+["crypto-js" "3.1.6"]
+["bignumber.js" "2.4.0"]
+[web3 "0.16.0"]
                        [ping "0.1.10"]
     ]}
 ; :main "release/hello_npm.js"
@@ -19,7 +24,8 @@
   :cljsbuild {:builds {:app {:source-paths ["src"]
                              :compiler {:output-to "release/hello_npm.js"
                                         :output-dir "release"
-                                        :optimizations :simple
+                                      ;  :optimizations :simple
+                                        :optimizations :none
                                         :target :nodejs
                                         :verbose true
                                         :main hello-npm.core}}}})
