@@ -7,12 +7,9 @@
 
 (nodejs/enable-util-print!)
 
+(def fs (nodejs/require "fs"))
 (def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
-
-(defn sleep [msec]
-  (let [deadline (+ msec (.getTime (js/Date.)))]
-(while (> deadline (.getTime (js/Date.))))))
 
 (defn unlockAccount [web3 addr passwd duration]
     ;web3.personal.unlockAccount("0x1234...","password")
@@ -25,7 +22,6 @@
     (let [obj (clj->js {:to to
                         :from from
                         :value amount})]
-        (println "obj:" obj)
         (.sendTransaction eth obj f) ) )
 
 (defn -main [& args]
@@ -39,10 +35,11 @@
               coinbase (.-coinbase eth)
               balance (.getBalance eth coinbase)
               accounts (js->clj (.-accounts eth))]
-            (println "coinbase: " coinbase)
-            (println "balance: " (.toFormat balance 2))
-            (println "lastblock: " (js->clj (.getBlock eth "latest")))
-            (println "accounts: " accounts)
+            ;(println "coinbase: " coinbase)
+            ;(println "balance: " (.toFormat balance 2))
+            ;(println "lastblock/gasLimit: "
+            ;         (get (js->clj (.getBlock eth "latest")) "gasLimit"))
+            ;(println "accounts: " accounts)
 
             ; unlock
             (println
@@ -52,14 +49,40 @@
             (println "transaction: " (mkTransaction eth
                                                     (nth accounts 0)
                                                     (nth accounts 1)
-                                                    10
-                                                    #(println "tx-hash:" %) ) )
-            (sleep (* 100 10))
+                                                    2000000
+                                                    ;#(println "tx-hash:" %)
+                                                    ) )
             ; check balances
-            (println "wakeup")
+            (println "balances: ")
               (doall (map #(let [bal (.getBalance eth %)]
                                (println % "->" (.toFormat bal 2)) )
                           accounts))
+
+            ; resume (orgAddr)
+            (let [orgName "CLJS"
+                  orgAddr "0xedcdbd7c497a1b35df32029e930f8fcc7c65c14c"
+                  agentAddr "0x7748d0060a538ea1988007710a52e5c0f5bef280"
+                  strSol (.readFileSync fs "resume.sol" "utf-8")
+                  bytecode (.solidity (.-compile eth) strSol)
+                  abi (.-abiDefinition (.-info (.-systemContract bytecode)))
+                  systenAgent (.at (.contract eth abi) agentAddr)
+                  ]
+                ;(println "sol:" systemContract "," systenAgent)
+
+                (let [esGas (.estimateGas (.-addOrganization systenAgent)
+                                         orgName
+                                         (clj->js {:from orgAddr}))
+                      tHash (.addOrganization systenAgent
+                                      orgName
+                                      (clj->js {:from orgAddr
+                                                :gas esGas}))]
+                    (println "Gas(estimate):" esGas)
+                    (println "Add(TxHash):" tHash)
+                    (.writeFile fs "writetest.txt" (str orgAddr ","
+                                                        orgName ","
+                                                        tHash))
+                    )
+                )
             )
         )
     )
