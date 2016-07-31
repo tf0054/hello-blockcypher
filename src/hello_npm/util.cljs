@@ -1,7 +1,7 @@
 (ns hello-npm.utils
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
-  (:require [clojure.browser.repl :as repl]
-            [cljs.nodejs :as nodejs]
+  (:require ;[clojure.browser.repl :as repl]
+            ;[cljs.nodejs :as nodejs]
             [pointslope.remit.events :as pse :refer [emit subscribe]]
             [pointslope.remit.middleware :as psm :refer [event-map-middleware]]
             [cljs.core.async :as async :refer [timeout chan <! >!]]

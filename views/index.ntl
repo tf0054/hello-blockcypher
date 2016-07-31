@@ -1,0 +1,91 @@
+<html>
+<head><title>
+<!-- Preparing data for resume-demo -->
+#title#
+</title></head>
+
+<script type="text/javascript">
+//ブラウザチェック
+ if (typeof localStorage == 'undefined') {
+  document.write("<p>お使いのブラウザではWeb Storageが使えません。</p>");
+ } else {
+  //セッションストレージ設定
+  var storage = localStorage;
+
+  //ボタンイベント1 保存
+  function setlocalStorage() {
+    var key = document.getElementById("textkey").value;
+    var value = document.getElementById("textdata").value;
+    if (key && value) {
+      storage.setItem(key, value);
+    }
+    key = "";
+    value = "";
+    viewStorage();
+  }
+
+  //ボタンイベント2 削除
+  function removeStorage() {
+    var key = document.getElementById("textkey").value;
+    storage.removeItem(key);
+    key = "";
+    viewStorage();
+  }
+
+  //ボタンイベント3 全て削除
+  function removeallStorage() {
+    storage.clear();
+    viewStorage();
+  }
+
+  //イベント発生時にテーブルにストレージの値を表示
+  function viewStorage() {
+    var list = document.getElementById("list")
+    while (list.firstChild) list.removeChild(list.firstChild);
+    for (var i=0; i < storage.length; i++) {
+      var _key = storage.key(i);
+      var tr = document.createElement("tr");
+      var td1 = document.createElement("td");
+      var td2 = document.createElement("td");
+      list.appendChild(tr);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      td1.innerHTML = _key;
+      td2.innerHTML = storage.getItem(_key);
+    }
+  }
+  //起動時にテーブルにストレージの値を表示
+  function load() {
+    var list = document.getElementById("list")
+    while (list.firstChild) list.removeChild(list.firstChild);
+    for (var i=0; i < localStorage.length; i++) {
+      var _key = localStorage.key(i);
+      var tr = document.createElement("tr");
+      var td1 = document.createElement("td");
+      var td2 = document.createElement("td");
+      list.appendChild(tr);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      td1.innerHTML = _key;
+      td2.innerHTML = localStorage.getItem(_key);
+  }
+}
+
+
+ }
+</script>
+
+<h4>#message#</h4>
+<h4>入力フィールド</h4>
+<p>Key：<input id="textkey" type="text" />　値：<input id="textdata" type="text" /></p>
+<p align="right">  <button id="button" onclick="setlocalStorage()">保存</button>
+  <button id="button" onclick="removeStorage()">削除</button>
+  <button id="button" onclick="removeallStorage()">全て削除</button></p>
+<h4>入力結果</h4>
+<table class="tagForList2">
+    <tr>
+      <th>キー</th><th>値</th>
+    </tr>
+    <tbody id="list">
+    </tbody>
+  </table>

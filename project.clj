@@ -13,6 +13,8 @@
     ]
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [ping "0.1.10"]
+                       [express "4.14.0"]
+                       [opn "4.0.2"]
                        [xmlhttprequest "1.8.0"]
                        [utf8 "2.1.1"]
                        [crypto-js "3.1.6"]

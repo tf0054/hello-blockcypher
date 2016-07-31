@@ -4,6 +4,7 @@
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
             [hello-npm.utils :as utils]
+            [hello-npm.express :as express]
             ))
 
 ;; (defonce conn
@@ -12,11 +13,12 @@
 (nodejs/enable-util-print!)
 
 (def fs (nodejs/require "fs"))
+(def opn (nodejs/require "opn"))
 (def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
 
 (defn addOrgCore [eth orgName orgAddr agentAddr]
-    (let [strSol (.readFileSync fs "resume.sol" "utf-8")
+    (let [strSol (.readFileSync fs "dapp/resume.sol" "utf-8")
           bytecode (.solidity (.-compile eth) strSol)
           abi (.-abiDefinition (.-info (.-systemContract bytecode)))
           systenAgent (.at (.contract eth abi) agentAddr)
@@ -80,7 +82,8 @@
                 (println "balances: ")
                 (doall (map #(let [bal (.getBalance eth %)]
                                  (println % "->" (.toFormat bal 2)) )
-                            (take 3 accounts))) )
+                            (take 3 accounts)))
+                (>! ch 2) )
 
             (println "orgAddr: ")
             ; resume (orgAddr)
@@ -95,6 +98,15 @@
                             (str (concat aryResult '(orgAddr))) )
                 )
             ) )
+
+            (go (express/startHttpd))
+
+            ;browser open
+            ;(go (<! ch)
+            (opn "http://localhost:3000/organization.html"
+                  (clj->js {:app
+                            ["google chrome"]}))
+                ;)
             )
         )
     )
