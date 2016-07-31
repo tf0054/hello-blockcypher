@@ -10,6 +10,9 @@
 (defn nprint [x]
     (.write (.-stdout js/process) x) )
 
+(defn logtime []
+    (.toISOString (js/Date.)))
+
 (defn unlockAccount [web3 addr passwd duration]
     ;web3.personal.unlockAccount("0x1234...","password")
     (.unlockAccount (.-personal web3)

@@ -18,7 +18,8 @@
 (def web3obj (nodejs/require "web3"))
 
 (defn addOrgCore [eth orgName orgAddr agentAddr]
-    (let [strSol (.readFileSync fs "dapp/resume.sol" "utf-8")
+    (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
+                                "utf-8")
           bytecode (.solidity (.-compile eth) strSol)
           abi (.-abiDefinition (.-info (.-systemContract bytecode)))
           systenAgent (.at (.contract eth abi) agentAddr)
@@ -33,46 +34,54 @@
                                                 :gas esGas}))]
             (println "Gas(estimate):" esGas)
             (println "Add(TxHash):" tHash)
-            '(esGas tHash)
+            [tHash esGas]
             )
         )
     )
 
+(defonce newAccount (atom ""))
+
 (defn -main [& args]
+    (let [numArgs 2]
+        (if (< (count args) numArgs)
+            (do (println (str "Missing args(" numArgs ")"
+                              "! - should be provided: "
+                              "SystemAgentAddr OrgName"))
+                         (.exit js/process 1) ) ))
+
     (let [web3 (web3obj.)
-          web3prov (web3obj.providers.HttpProvider. "http://localhost:8545")]
+          web3prov (web3obj.providers.HttpProvider. "http://localhost:8545")
+          addrSystemAgent (nth args 1)]
+        ;(if false (do ;***
         ; init
         ;   web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
         (.setProvider web3 web3prov)
         ; exec
         (let [eth (.-eth web3)
               coinbase (.-coinbase eth)
-              balance (.getBalance eth coinbase)
-              accounts (js->clj (.-accounts eth))
+              ;accounts (js->clj (.-accounts eth))
               ch (chan)]
 
             ; basic operations
-;;             (println "coinbase: " coinbase)
-;;             (println "balance: " (.toFormat balance 2))
-;;             (println "lastblock/gasLimit: "
-;;                      (get (js->clj (.getBlock eth "latest")) "gasLimit"))
-;;             (println "accounts: " accounts)
+            (println "coinbase: " coinbase)
+            ;(println "balance: " (.toFormat balance 2))
+            ;(println "accounts: " accounts)
 
             ; newAccount
-;;             (let [newAcc (.newAccount (.-personal web3) "password")]
-;;                 (println "newAccount:" newAcc ) )
+            (let [newAcc (.newAccount (.-personal web3) "password")]
+                (println "newAccount:" newAcc )
+                (reset! newAccount newAcc) )
 
             ; unlock
             (println
               (doall (map #(utils/unlockAccount web3 % "password" 300)
-                          (take 3 accounts)) ) )
+                          [coinbase @newAccount]) ) )
+
             ; transfer
             (let [tx (utils/sendEther eth
-                                    (nth accounts 0)
-                                    (nth accounts 1)
-                                    2000000
-                                    ;#(println "tx-hash:" %)
-                                    )]
+                                    coinbase
+                                    @newAccount
+                                    3000000000000000000)]
                 (utils/waitTx eth ch tx) )
 
             ; http://www.slideshare.net/sohta/coreasync
@@ -82,41 +91,30 @@
                 (println "balances: ")
                 (doall (map #(let [bal (.getBalance eth %)]
                                  (println % "->" (.toFormat bal 2)) )
-                            (take 3 accounts)))
+                            [coinbase @newAccount]))
                 (>! ch 2) )
 
-            (println "orgAddr: ")
-            ; resume (orgAddr)
-            (if false (do
-            (let [orgAddr "0xedcdbd7c497a1b35df32029e930f8fcc7c65c14c"
-                  aryResult
-                  (addOrgCore eth "CLJS" orgAddr
-                              "0x7748d0060a538ea1988007710a52e5c0f5bef280")]
-                ; (.writeFile fs
-                (.appendFile fs
-                            "writetest.txt"
-                            (str (concat aryResult '(orgAddr))) )
-                )
-            ) )
+            (go (<! ch)
+                (println "AddOrganization:")
+                (let [tx (nth (addOrgCore eth (nth args 0) @newAccount
+                                  addrSystemAgent) 0)]
+                    (utils/waitTx eth ch tx) )
+;;                     (.appendFile fs
+;;                                  "writetest.txt"
+;;                                  (str (concat aryResult '(orgAddr))) )
+                    )
+             )
+        ;)) ;***
 
-            (go (express/startHttpd))
+        (go (express/startHttpd @newAccount addrSystemAgent))
 
-            ;browser open
-            ;(go (<! ch)
-            (opn "http://localhost:3000/organization.html"
-                  (clj->js {:app
-                            ["google chrome"]}))
-                ;)
-            )
+        ;browser open
+        ;(go (<! ch)
+        (opn "http://localhost:3000/ntl"
+             (clj->js {:app
+                       ["google chrome"]}))
+        ;)
         )
     )
-
-(defn -main2 [& args]
-  (if (nil? args)
-    (println "hostname is needed as a agrs")
-    (.probe (.-sys ping)
-      (nth args 0)
-      #(println "ping(" (nth args 0) "):" %)) )
-)
 
 (set! *main-cli-fn* -main)
