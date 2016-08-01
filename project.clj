@@ -13,6 +13,7 @@
     ]
   :npm {:dependencies [[source-map-support "0.3.2"]
                        [ping "0.1.10"]
+                       [mustache-express "1.2.2"]
                        [express "4.14.0"]
                        [opn "4.0.2"]
                        [xmlhttprequest "1.8.0"]

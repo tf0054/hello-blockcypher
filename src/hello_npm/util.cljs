@@ -36,7 +36,7 @@
   (-> handler
      (event-map-middleware :db app-db)) )
 
-(defn waitTx [eth ch tx]
+(defn waitTx [eth ch tx f]
     (go ; This go needed for starting watching parallely..
         (println "Tx registered:" tx)
         (let [wfilter (.watch
@@ -61,6 +61,7 @@
                        (wrap-db
                            #(let [data (:data %)]
                                 (.stopWatching wfilter)
+                                (f (.getTransactionReceipt eth tx))
                                 (swap! app-db assoc-in [:loop] false)
                                 ;(<! (timeout 410)) ; flush final "."
                                 (println "")

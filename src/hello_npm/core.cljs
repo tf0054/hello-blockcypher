@@ -17,12 +17,18 @@
 (def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
 
-(defonce strUri "http://172.17.0.2:8545")
+(defonce ls-db (atom {}))
+(defonce strUri "http://127.0.0.1:8545")
+;(defonce strUri "http://172.17.0.2:8545")
 
 (defn toEther [web3 x]
     (.toString (.fromWei web3 x "ether")) )
 
-(defn addOrgCore [eth orgName orgAddr agentAddr]
+(defn- doCompiled [err compiled]
+    (println "compiled:" compiled)
+    (swap! ls-db assoc-in [:compiled] compiled) )
+
+(defn- addOrgCore [eth orgName orgAddr agentAddr]
     (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
                                 "utf-8")
           bytecode (.solidity (.-compile eth) strSol)
@@ -30,20 +36,27 @@
           systenAgent (.at (.contract eth abi) agentAddr)
           ]
 
+        (println "compaired:"(= bytecode (:compiled @ls-db)))
+
         (let [esGas (.estimateGas (.-addOrganization systenAgent)
                                   orgName
                                   (clj->js {:from orgAddr}))
               tHash (.addOrganization systenAgent
                                       orgName
                                       (clj->js {:from orgAddr
-                                                :gas esGas}))]
+                                                :gas esGas}))
+              ]
             (println "Gas(estimate):" esGas)
-            [tHash abi]
+
+            [tHash abi systenAgent]
             )
         )
     )
 
-(defonce ls-db (atom {}))
+(defn- getAgentCore [eth abi account agentAddr]
+    (let [systenAgent (.at (.contract eth abi) agentAddr)]
+        (.getOrganizationAgent systenAgent
+                                      (clj->js {:from account})) ) )
 
 (defn -main [& args]
     (let [numArgs 2]
@@ -53,8 +66,8 @@
                               "SystemAgentAddr OrgName"))
                          (.exit js/process 1) )
             (do
-                (swap! ls-db assoc-in [:system] (nth args 1))
-                (swap! ls-db assoc-in [:name] (nth args 0)) )
+                (swap! ls-db assoc-in [:name] (nth args 0))
+                (swap! ls-db assoc-in [:system] (nth args 1)) )
             ))
 
     (let [web3 (web3obj.)
@@ -68,12 +81,12 @@
               ;accounts (js->clj (.-accounts eth))
               ch (chan)]
 
-            ;(if false (do ;***
+;            (if false (do ;***
 
             ; basic operations
             (println "coinbase: " coinbase)
+            (swap! ls-db assoc-in [:coinbase] coinbase)
             ;(println "balance: " (.toFormat balance 2))
-            ;(println "accounts: " accounts)
 
             ; newAccount
             (let [newAcc (.newAccount (.-personal web3) "password")]
@@ -94,7 +107,7 @@
                                           coinbase
                                           (:account @ls-db)
                                           3000000000000000000)]
-                    (utils/waitTx eth ch tx) )
+                    (utils/waitTx eth ch tx #(println "transfer: end" %)) )
                 )
 
             ; http://www.slideshare.net/sohta/coreasync
@@ -116,17 +129,31 @@
                       tx (nth contract 0)
                       abi (nth contract 1)]
                     (swap! ls-db assoc-in [:abi] (.stringify js/JSON abi))
-                    (utils/waitTx eth ch tx) )
+                    (utils/waitTx eth ch tx #(do (println "AddOrganization: recipt" %)
+                                                 (println "GetOrganizationAgent:" (:abi @ls-db))
+                                                 (let [aAddr (getAgentCore eth ;(.parse js/JSON (:abi @ls-db))
+                                                                           abi
+                                                                           (:account @ls-db)
+                                                                           (:system @ls-db))]
+                                                     (println "address: " aAddr)
+                                                     (swap! ls-db assoc-in [:agent] aAddr) )
+
+                                                 ) ) ) )
 ;;                     (.appendFile fs
 ;;                                  "writetest.txt"
 ;;                                  (str (concat aryResult '(orgAddr))) )
-                )
 
-            ;)) ;***
+ ;          ) (go (>! ch 2)))  ;***
 
             (go (<! ch)
+                (if (> 4 (.-length (:agent @ls-db)))
+                    (do
+                        (println "ERR: system agent address is wrong.")
+                        (.exit js/process 1) ) )
+                ;
                 (go (express/startHttpd @ls-db))
                 (>! ch 4) )
+
             (go (<! ch)
                 (opn "http://localhost:3000/ntl"
                      (clj->js {:app
