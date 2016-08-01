@@ -58,18 +58,21 @@
         (.getOrganizationAgent systenAgent
                                       (clj->js {:from account})) ) )
 
-(defn -main [& args]
+(defn- argsCheck [args]
     (let [numArgs 2]
         (if (< (count args) numArgs)
             (do (println (str "Missing args(" numArgs ")"
                               "! - should be provided: "
                               "SystemAgentAddr OrgName"))
-                         (.exit js/process 1) )
+                (.exit js/process 1) )
             (do
                 (swap! ls-db assoc-in [:name] (nth args 0))
                 (swap! ls-db assoc-in [:system] (nth args 1)) )
-            ))
+            )) )
 
+(defn -main [& args]
+    (argsCheck args)
+    ;
     (let [web3 (web3obj.)
           web3prov (web3obj.providers.HttpProvider. strUri)]
         ; init
@@ -107,7 +110,7 @@
                                           coinbase
                                           (:account @ls-db)
                                           3000000000000000000)]
-                    (utils/waitTx eth ch tx #(println "transfer: end" %)) )
+                    (utils/waitTx eth ch tx #(println "transfer: recipt" %)) )
                 )
 
             ; http://www.slideshare.net/sohta/coreasync
@@ -146,7 +149,7 @@
  ;          ) (go (>! ch 2)))  ;***
 
             (go (<! ch)
-                (if (> 4 (.-length (:agent @ls-db)))
+                (if (> 4 (.-length (str (:agent @ls-db))))
                     (do
                         (println "ERR: system agent address is wrong.")
                         (.exit js/process 1) ) )
