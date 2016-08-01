@@ -33,13 +33,12 @@
                                       (clj->js {:from orgAddr
                                                 :gas esGas}))]
             (println "Gas(estimate):" esGas)
-            (println "Add(TxHash):" tHash)
-            [tHash esGas]
+            [tHash abi]
             )
         )
     )
 
-(defonce newAccount (atom ""))
+(defonce ls-db (atom {}))
 
 (defn -main [& args]
     (let [numArgs 2]
@@ -47,12 +46,14 @@
             (do (println (str "Missing args(" numArgs ")"
                               "! - should be provided: "
                               "SystemAgentAddr OrgName"))
-                         (.exit js/process 1) ) ))
+                         (.exit js/process 1) )
+            (do
+                (swap! ls-db assoc-in [:system] (nth args 1))
+                (swap! ls-db assoc-in [:name] (nth args 0)) )
+            ))
 
     (let [web3 (web3obj.)
-          web3prov (web3obj.providers.HttpProvider. "http://localhost:8545")
-          addrSystemAgent (nth args 1)]
-        ;(if false (do ;***
+          web3prov (web3obj.providers.HttpProvider. "http://localhost:8545")]
         ; init
         ;   web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
         (.setProvider web3 web3prov)
@@ -62,6 +63,8 @@
               ;accounts (js->clj (.-accounts eth))
               ch (chan)]
 
+            ;(if false (do ;***
+
             ; basic operations
             (println "coinbase: " coinbase)
             ;(println "balance: " (.toFormat balance 2))
@@ -69,20 +72,25 @@
 
             ; newAccount
             (let [newAcc (.newAccount (.-personal web3) "password")]
-                (println "newAccount:" newAcc )
-                (reset! newAccount newAcc) )
+                (swap! ls-db assoc-in [:account] newAcc)
+                (println "newAccount:" newAcc ) )
 
             ; unlock
-            (println
-              (doall (map #(utils/unlockAccount web3 % "password" 300)
-                          [coinbase @newAccount]) ) )
+            (go ;(<! ch)
+                (println "unlock:"
+                         (doall (map #(utils/unlockAccount web3 % "password" 300)
+                                     [coinbase (:account @ls-db)]) ) )
+                (>! ch 0) )
 
             ; transfer
-            (let [tx (utils/sendEther eth
-                                    coinbase
-                                    @newAccount
-                                    3000000000000000000)]
-                (utils/waitTx eth ch tx) )
+            (go (<! ch)
+                (println "transfer:")
+                (let [tx (utils/sendEther eth
+                                          coinbase
+                                          (:account @ls-db)
+                                          3000000000000000000)]
+                    (utils/waitTx eth ch tx) )
+                )
 
             ; http://www.slideshare.net/sohta/coreasync
 
@@ -91,28 +99,36 @@
                 (println "balances: ")
                 (doall (map #(let [bal (.getBalance eth %)]
                                  (println % "->" (.toFormat bal 2)) )
-                            [coinbase @newAccount]))
+                            [coinbase (:account @ls-db)]))
                 (>! ch 2) )
 
             (go (<! ch)
                 (println "AddOrganization:")
-                (let [tx (nth (addOrgCore eth (nth args 0) @newAccount
-                                  addrSystemAgent) 0)]
+                (let [contract (addOrgCore eth
+                                           (:name @ls-db)
+                                           (:account @ls-db)
+                                           (:system @ls-db))
+                      tx (nth contract 0)
+                      abi (nth contract 1)]
+                    (swap! ls-db assoc-in [:abi] (.stringify js/JSON abi))
                     (utils/waitTx eth ch tx) )
 ;;                     (.appendFile fs
 ;;                                  "writetest.txt"
 ;;                                  (str (concat aryResult '(orgAddr))) )
-                    )
-             )
-        ;)) ;***
+                )
 
-        (go (express/startHttpd @newAccount addrSystemAgent))
+            ;)) ;***
 
+            (go (<! ch)
+                (go (express/startHttpd @ls-db))
+                (>! ch 4) )
+            (go (<! ch)
+                (opn "http://localhost:3000/ntl"
+                     (clj->js {:app
+                               ["google chrome"]})) )
+            )
         ;browser open
         ;(go (<! ch)
-        (opn "http://localhost:3000/ntl"
-             (clj->js {:app
-                       ["google chrome"]}))
         ;)
         )
     )

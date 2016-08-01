@@ -25,10 +25,13 @@ Preparing data for resume-demo / #account#
                   "#account#");
 
   setlocalStorage("resume.ethereum.demo.organization.profile.",
-                  "orgName");
+                  "#name#");
 
   setlocalStorage("resume.ethereum.demo.system.agent.address.",
                   "#system#");
+
+  setlocalStorage("resume.ethereum.demo.agent.abi",
+                  "#abi#");
 
   //ボタンイベント2 削除
   function removeStorage() {
