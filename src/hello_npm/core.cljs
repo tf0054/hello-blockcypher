@@ -32,11 +32,15 @@
     (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
                                 "utf-8")
           bytecode (.solidity (.-compile eth) strSol)
-          abi (.-abiDefinition (.-info (.-systemContract bytecode)))
-          systenAgent (.at (.contract eth abi) agentAddr)
-          ]
-
-        (println "compaired:"(= bytecode (:compiled @ls-db)))
+          abi {:systemContract (js->clj (.-abiDefinition
+                                            (.-info (.-systemContract bytecode))))
+               :applicantContract (js->clj (.-abiDefinition
+                                               (.-info (.-applicantContract bytecode))))
+               :organizationContract (js->clj (.-abiDefinition
+                                                  (.-info (.-organizationContract bytecode)))) }
+          systenAgent (.at (.contract eth (.-abiDefinition
+                                            (.-info (.-systemContract bytecode)))
+                                      ) agentAddr) ]
 
         (let [esGas (.estimateGas (.-addOrganization systenAgent)
                                   orgName
@@ -131,11 +135,10 @@
                                            (:system @ls-db))
                       tx (nth contract 0)
                       abi (nth contract 1)]
-                    (swap! ls-db assoc-in [:abi] (.stringify js/JSON abi))
+                    (swap! ls-db assoc-in [:abi] (.stringify js/JSON (clj->js abi)))
                     (utils/waitTx eth ch tx #(do (println "AddOrganization: recipt" %)
-                                                 (println "GetOrganizationAgent:" (:abi @ls-db))
-                                                 (let [aAddr (getAgentCore eth ;(.parse js/JSON (:abi @ls-db))
-                                                                           abi
+                                                 (println "GetOrganizationAgent:")
+                                                 (let [aAddr (getAgentCore eth (.-systemContract (.parse js/JSON (:abi @ls-db)) )
                                                                            (:account @ls-db)
                                                                            (:system @ls-db))]
                                                      (println "address: " aAddr)

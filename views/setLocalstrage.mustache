@@ -3,7 +3,7 @@
 <title>
 Preparing data for resume-demo / #account#
 </title>
-<meta http-equiv="refresh" content="100; URL=http://localhost:3000/resume/organization.html">
+<meta http-equiv="refresh" content="3; URL=http://localhost:3000/resume/organization.html">
 <script type="text/javascript">
 //ブラウザチェック
  if (typeof localStorage == 'undefined') {
@@ -22,15 +22,11 @@ Preparing data for resume-demo / #account#
   }
 
   console.log('account: '+'{{{ account }}}');
-  console.log('{{{ name }}}');
   console.log('{{{ system }}}');
   console.log('{{{ agent }}}');
   console.log('{{{ abi }}}');
   setlocalStorage("resume.ethereum.demo.organization.account.",
                   '{{{ account }}}');
-
-  setlocalStorage("resume.ethereum.demo.organization.profile.",
-                  '{{{ name }}}');
 
   setlocalStorage("resume.ethereum.demo.system.agent.address",
                   '{{{ system }}}');
