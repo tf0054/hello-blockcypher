@@ -63,15 +63,16 @@
                                       (clj->js {:from account})) ) )
 
 (defn- argsCheck [args]
-    (let [numArgs 2]
+    (let [numArgs 3]
         (if (< (count args) numArgs)
             (do (println (str "Missing args(" numArgs ")"
                               "! - should be provided: "
-                              "SystemAgentAddr OrgName"))
+                              "OrgName SystemAddr SystemAgentAddr"))
                 (.exit js/process 1) )
             (do
                 (swap! ls-db assoc-in [:name] (nth args 0))
-                (swap! ls-db assoc-in [:system] (nth args 1)) )
+                (swap! ls-db assoc-in [:system] (nth args 1))
+                (swap! ls-db assoc-in [:sysagent] (nth args 2)) )
             )) )
 
 (defn -main [& args]
@@ -132,7 +133,7 @@
                 (let [contract (addOrgCore eth
                                            (:name @ls-db)
                                            (:account @ls-db)
-                                           (:system @ls-db))
+                                           (:sysagent @ls-db))
                       tx (nth contract 0)
                       abi (nth contract 1)]
                     (swap! ls-db assoc-in [:abi] (.stringify js/JSON (clj->js abi)))
@@ -140,9 +141,9 @@
                                                  (println "GetOrganizationAgent:")
                                                  (let [aAddr (getAgentCore eth (.-systemContract (.parse js/JSON (:abi @ls-db)) )
                                                                            (:account @ls-db)
-                                                                           (:system @ls-db))]
+                                                                           (:sysagent @ls-db))]
                                                      (println "address: " aAddr)
-                                                     (swap! ls-db assoc-in [:agent] aAddr) )
+                                                     (swap! ls-db assoc-in [:orgagent] aAddr) )
 
                                                  ) ) ) )
 ;;                     (.appendFile fs
@@ -152,7 +153,7 @@
  ;          ) (go (>! ch 2)))  ;***
 
             (go (<! ch)
-                (if (> 4 (.-length (str (:agent @ls-db))))
+                (if (> 4 (.-length (str (:orgagent @ls-db))))
                     (do
                         (println "ERR: system agent address is wrong.")
                         (.exit js/process 1) ) )

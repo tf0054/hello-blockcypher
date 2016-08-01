@@ -21,18 +21,17 @@ Preparing data for resume-demo / #account#
     value = "";
   }
 
-  console.log('account: '+'{{{ account }}}');
-  console.log('{{{ system }}}');
-  console.log('{{{ agent }}}');
-  console.log('{{{ abi }}}');
   setlocalStorage("resume.ethereum.demo.organization.account.",
                   '{{{ account }}}');
 
+  setlocalStorage("resume.ethereum.demo.organization.agent.address.",
+                  '{{{ orgagent }}}');
+
   setlocalStorage("resume.ethereum.demo.system.agent.address",
-                  '{{{ system }}}');
+                  '{{{ sysagent }}}');
 
   setlocalStorage("resume.ethereum.demo.system.account",
-                  '{{{ agent }}}');
+                  '{{{ system }}}');
 
   setlocalStorage("resume.ethereum.demo.agent.abi",
                   '{{{ abi }}}');
