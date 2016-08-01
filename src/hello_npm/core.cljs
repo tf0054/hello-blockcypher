@@ -17,6 +17,11 @@
 (def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
 
+(defonce strUri "http://172.17.0.2:8545")
+
+(defn toEther [web3 x]
+    (.toString (.fromWei web3 x "ether")) )
+
 (defn addOrgCore [eth orgName orgAddr agentAddr]
     (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
                                 "utf-8")
@@ -53,7 +58,7 @@
             ))
 
     (let [web3 (web3obj.)
-          web3prov (web3obj.providers.HttpProvider. "http://localhost:8545")]
+          web3prov (web3obj.providers.HttpProvider. strUri)]
         ; init
         ;   web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
         (.setProvider web3 web3prov)
@@ -98,8 +103,8 @@
             (go (<! ch)
                 (println "balances: ")
                 (doall (map #(let [bal (.getBalance eth %)]
-                                 (println % "->" (.toFormat bal 2)) )
-                            [coinbase (:account @ls-db)]))
+                                 (println % "->" (toEther web3 bal) ))
+                            [coinbase (:account @ls-db)]) )
                 (>! ch 2) )
 
             (go (<! ch)
