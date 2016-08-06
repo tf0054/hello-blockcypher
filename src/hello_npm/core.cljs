@@ -19,8 +19,6 @@
 (def web3obj (nodejs/require "web3"))
 
 (defonce ls-db (atom {}))
-(defonce strUri "http://127.0.0.1:8545")
-;(defonce strUri "http://172.17.0.2:8545")
 
 (defn- getAbi [x]
     {:systemContract (js->clj (.-abiDefinition
@@ -66,15 +64,18 @@
 
 (defn -main [& args]
     ; checking args
-    (let [x (args/parseOpts args)]
-        (if (not (nil? (x :errors)))
+    (let [x (args/parseOpts args)
+          o (:options x)]
+        (if (or (not (nil? (x :errors))) (contains? o :help))
             (do (println (:errors x) "\n" "How to use:")
                 (utils/nprint (:summary x))
                 (.exit js/process 1))
-            (do (swap! ls-db merge (x :options)) ) ) )
+            (do (swap! ls-db merge o) ) )
+            ;(print x)
+        )
     ; main
     (let [web3 (web3obj.)
-          web3prov (web3obj.providers.HttpProvider. strUri)]
+          web3prov (web3obj.providers.HttpProvider. (:geth @ls-db))]
         ; init
         ;   web3.setProvider(new web3.providers.HttpProvider('http://localhost:8545'));
         (.setProvider web3 web3prov)

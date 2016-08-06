@@ -3,26 +3,25 @@
             [hello-npm.utils :as utils]
             ))
 
+; https://github.com/clojure/tools.cli
 (def cli-options
-  ;; An option with a required argument
-  [["-n" "--name NameOfOrganization" "Organization's name"
+  [["-g" "--geth Geth's uri" "Your geth's uri"
+    :id :geth
+    :default "http://127.0.0.1:8545"
+    ]
+   ["-n" "--name NameOfOrganization" "Organization's name"
     :id :name
     :default "TestOrg"
-    ;:parse-fn #(Integer/parseInt %)
-    ;:validate [#(< 0 % 0x10000) "Must be a number between 0 and 65536"]
     ]
-   ;; A non-idempotent option
    ["-s" "--system SystemAccoutAddress" "System account's address"
     :id :system
+    :missing "-s is needed."
     :validate [#(not (nil? %)) "Must be set"]
-    ;:default 0
-    ;:assoc-fn (fn [m k _] (update-in m [k] inc))
     ]
    ["-a" "--systemagent SystemAgentAddress" "System account's address"
     :id :sysagent
+    :missing "-a is needed."
     :validate [#(not (nil? %)) "Must be set"]
-    ;:default 0
-    ;:assoc-fn (fn [m k _] (update-in m [k] inc))
     ]
    ;; A boolean option defaulting to nil
    ["-h" "--help"]])
