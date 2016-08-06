@@ -13,6 +13,9 @@
 
 ; - -
 
+(defn toEther [web3 x]
+    (.toString (.fromWei web3 x "ether")) )
+
 (defn unlockAccount [web3 addr passwd duration]
     ;web3.personal.unlockAccount("0x1234...","password")
     (.unlockAccount (.-personal web3)
@@ -66,12 +69,10 @@
                                 (nprint "Tx completed:" data)
                                 ) ) ) )
         )
-    (go
-        (swap! app-db assoc-in [:loop] true)
+    (go (swap! app-db assoc-in [:loop] true)
         (loop [x 1]
             (if (:loop @app-db)
-                (do
-                    (<! (timeout 400))
+                (do (<! (timeout 400))
                     (nprint ".")
                     (recur 1))
                 (>! ch 1)

@@ -22,26 +22,27 @@
 (defonce strUri "http://127.0.0.1:8545")
 ;(defonce strUri "http://172.17.0.2:8545")
 
-(defn toEther [web3 x]
-    (.toString (.fromWei web3 x "ether")) )
+(defn- getAbi [x]
+    {:systemContract (js->clj (.-abiDefinition
+                                  (.-info (.-systemContract x))))
+     :applicantContract (js->clj (.-abiDefinition
+                                     (.-info (.-applicantContract x))))
+     :organizationContract (js->clj (.-abiDefinition
+                                        (.-info (.-organizationContract x)))) }
+    )
 
-(defn- doCompiled [err compiled]
-    (println "compiled:" compiled)
-    (swap! ls-db assoc-in [:compiled] compiled) )
+(defn- getSA [eth agentAddr x]
+    (.at (.contract eth (.-abiDefinition
+                            (.-info (.-systemContract x)))
+                    ) agentAddr)
+    )
 
 (defn- addOrgCore [eth orgName orgAddr agentAddr]
     (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
                                 "utf-8")
           bytecode (.solidity (.-compile eth) strSol)
-          abi {:systemContract (js->clj (.-abiDefinition
-                                            (.-info (.-systemContract bytecode))))
-               :applicantContract (js->clj (.-abiDefinition
-                                               (.-info (.-applicantContract bytecode))))
-               :organizationContract (js->clj (.-abiDefinition
-                                                  (.-info (.-organizationContract bytecode)))) }
-          systenAgent (.at (.contract eth (.-abiDefinition
-                                            (.-info (.-systemContract bytecode)))
-                                      ) agentAddr) ]
+          abi (getAbi bytecode)
+          systenAgent (getSA eth agentAddr bytecode) ]
 
         (let [esGas (.estimateGas (.-addOrganization systenAgent)
                                   orgName
@@ -109,8 +110,7 @@
                                           coinbase
                                           (:account @ls-db)
                                           3000000000000000000)]
-                    (utils/waitTx eth ch tx #(println "transfer: recipt" %)) )
-                )
+                    (utils/waitTx eth ch tx #(println "\ntransfer: recipt\n" %)) ) )
 
             ; http://www.slideshare.net/sohta/coreasync
 
@@ -118,7 +118,7 @@
             (go (<! ch)
                 (println "balances: ")
                 (doall (map #(let [bal (.getBalance eth %)]
-                                 (println % "->" (toEther web3 bal) ))
+                                 (println % "->" (utils/toEther web3 bal) ))
                             [coinbase (:account @ls-db)]) )
                 (>! ch 2) )
 
@@ -132,20 +132,22 @@
                       tx (nth contract 0)
                       abi (nth contract 1)]
                     (swap! ls-db assoc-in [:abi] (.stringify js/JSON (clj->js abi)))
-                    (utils/waitTx eth ch tx #(do (println "AddOrganization: recipt" %)
-                                                 (println "GetOrganizationAgent:")
-                                                 (let [aAddr (getAgentCore eth (.-systemContract (.parse js/JSON (:abi @ls-db)) )
-                                                                           (:account @ls-db)
-                                                                           (:sysagent @ls-db))]
-                                                     (println "address: " aAddr)
-                                                     (swap! ls-db assoc-in [:orgagent] aAddr) )
+                    (utils/waitTx eth ch tx #(println "\nAddOrganization: recipt\n" %) ) ) )
+ ;          ) (go (>! ch 2)))  ;***
 
-                                                 ) ) ) )
+            ; get created Org agent address
+            (go (<! ch)
+                (println "GetOrganizationAgent:")
+                (let [aAddr (getAgentCore eth (.-systemContract (.parse js/JSON (:abi @ls-db)) )
+                                          (:account @ls-db)
+                                          (:sysagent @ls-db))]
+                    (println "OA address: " aAddr)
+                    (swap! ls-db assoc-in [:orgagent] aAddr) )
+                (>! ch 4) )
+
 ;;                     (.appendFile fs
 ;;                                  "writetest.txt"
 ;;                                  (str (concat aryResult '(orgAddr))) )
-
- ;          ) (go (>! ch 2)))  ;***
 
             ;start http listening
             (go (<! ch)
@@ -154,7 +156,7 @@
                         (.exit js/process 1) ) )
                 ;
                 (go (express/startHttpd @ls-db))
-                (>! ch 4) )
+                (>! ch 5) )
 
             ;browser open
             (go (<! ch)

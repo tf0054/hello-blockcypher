@@ -37,7 +37,6 @@
 (defn startHttpd [x]
     (let [app (express)]
         (reset! ls-db x)
-        (println "ls-db:" x)
         ;
         (.engine app "mustache" (mustacheExpress))
         ; set template engine
