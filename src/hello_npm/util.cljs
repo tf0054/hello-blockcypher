@@ -1,10 +1,8 @@
 (ns hello-npm.utils
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
-  (:require ;[clojure.browser.repl :as repl]
-            ;[cljs.nodejs :as nodejs]
+  (:require [cljs.core.async :as async :refer [timeout chan <! >!]]
             [pointslope.remit.events :as pse :refer [emit subscribe]]
             [pointslope.remit.middleware :as psm :refer [event-map-middleware]]
-            [cljs.core.async :as async :refer [timeout chan <! >!]]
             ))
 
 (defn nprint [x]
@@ -12,6 +10,8 @@
 
 (defn logtime []
     (.toISOString (js/Date.)))
+
+; - -
 
 (defn unlockAccount [web3 addr passwd duration]
     ;web3.personal.unlockAccount("0x1234...","password")
@@ -54,9 +54,7 @@
                                                              )
                                                          (nprint "+")
                                                          ) ) )
-                                             )
-                                         )
-                              ))]
+                                             ) ) ) )]
             (subscribe :stop-watch
                        (wrap-db
                            #(let [data (:data %)]
@@ -65,9 +63,9 @@
                                 (swap! app-db assoc-in [:loop] false)
                                 ;(<! (timeout 410)) ; flush final "."
                                 (println "")
-                                (println "Tx  completed:" data)
-                                ) ))
-            ) )
+                                (nprint "Tx completed:" data)
+                                ) ) ) )
+        )
     (go
         (swap! app-db assoc-in [:loop] true)
         (loop [x 1]

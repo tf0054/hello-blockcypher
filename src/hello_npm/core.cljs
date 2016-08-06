@@ -3,6 +3,7 @@
   (:require [clojure.browser.repl :as repl]
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
+            [hello-npm.args :as args]
             [hello-npm.utils :as utils]
             [hello-npm.express :as express]
             ))
@@ -62,22 +63,15 @@
         (.getOrganizationAgent systenAgent
                                       (clj->js {:from account})) ) )
 
-(defn- argsCheck [args]
-    (let [numArgs 3]
-        (if (< (count args) numArgs)
-            (do (println (str "Missing args(" numArgs ")"
-                              "! - should be provided: "
-                              "OrgName SystemAddr SystemAgentAddr"))
-                (.exit js/process 1) )
-            (do
-                (swap! ls-db assoc-in [:name] (nth args 0))
-                (swap! ls-db assoc-in [:system] (nth args 1))
-                (swap! ls-db assoc-in [:sysagent] (nth args 2)) )
-            )) )
-
 (defn -main [& args]
-    (argsCheck args)
-    ;
+    ; checking args
+    (let [x (args/parseOpts args)]
+        (if (not (nil? (x :errors)))
+            (do (println (:errors x) "\n" "How to use:")
+                (utils/nprint (:summary x))
+                (.exit js/process 1))
+            (do (swap! ls-db merge (x :options)) ) ) )
+    ; main
     (let [web3 (web3obj.)
           web3prov (web3obj.providers.HttpProvider. strUri)]
         ; init
@@ -128,6 +122,7 @@
                             [coinbase (:account @ls-db)]) )
                 (>! ch 2) )
 
+            ; Add organization
             (go (<! ch)
                 (println "AddOrganization:")
                 (let [contract (addOrgCore eth
@@ -152,23 +147,21 @@
 
  ;          ) (go (>! ch 2)))  ;***
 
+            ;start http listening
             (go (<! ch)
                 (if (> 4 (.-length (str (:orgagent @ls-db))))
-                    (do
-                        (println "ERR: system agent address is wrong.")
+                    (do (println "ERR: system agent address is wrong.")
                         (.exit js/process 1) ) )
                 ;
                 (go (express/startHttpd @ls-db))
                 (>! ch 4) )
 
+            ;browser open
             (go (<! ch)
                 (opn "http://localhost:3000/ntl"
                      (clj->js {:app
                                ["google chrome"]})) )
             )
-        ;browser open
-        ;(go (<! ch)
-        ;)
         )
     )
 

@@ -4,7 +4,9 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.8.51"]
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/tools.reader]]
-    ;
+                 ;
+                 [org.clojure/tools.cli "0.3.5"]
+                 ;
                  [pointslope/remit "0.2.0"]
     ]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
