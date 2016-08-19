@@ -1,4 +1,4 @@
-(ns hello-npm.utils
+(ns hello-shh.utils
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
   (:require [cljs.core.async :as async :refer [timeout chan <! >!]]
             [pointslope.remit.events :as pse :refer [emit subscribe]]

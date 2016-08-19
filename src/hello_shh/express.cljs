@@ -1,8 +1,8 @@
-(ns hello-npm.express
+(ns hello-shh.express
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
   (:require [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [hello-npm.utils :as utils]
+            [hello-shh.utils :as utils]
             ))
 
 (def fs (nodejs/require "fs"))

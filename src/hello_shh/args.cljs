@@ -1,6 +1,6 @@
-(ns hello-npm.args
+(ns hello-shh.args
   (:require [cljs.tools.cli :refer [parse-opts]]
-            [hello-npm.utils :as utils]
+            [hello-shh.utils :as utils]
             ))
 
 ; https://github.com/clojure/tools.cli
