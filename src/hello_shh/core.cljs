@@ -15,7 +15,7 @@
 
 (def fs (nodejs/require "fs"))
 (def opn (nodejs/require "opn"))
-(def ping (nodejs/require "ping"))
+;(def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
 
 (defonce ls-db (atom {}))
@@ -79,28 +79,34 @@
         ; init
         (.setProvider web3 web3prov)
         ; exec
-	(let [shh (.-shh web3)
-              myIdentity (.newIdentity shh) ]
-           (.post shh (clj->js {:from myIdentity
-                                :topic (.fromAscii web3 "Topic(AppName)")
-                                :payload [
-                                   (.fromAscii web3 "myName")
-                                   (.fromAscii web3 "What is your name?") ]
-                                :ttl 100
-                                :priority 100}))
+        (let [shh (.-shh web3)
+              myIdentity (.newIdentity shh)]
 
-           (let [shhWatch (.watch shh [
-              (.fromAscii web3 "Topic(AppName)")
-              myIdentity ] ) ]
-              (.arrived shhWatch (fn [m]
-                (println "Reply from " web3.toAscii(m.payload)
-                         " whose address is " + (.from m))) ) ) )
+            (println "myIdentity:" myIdentity)
 
-        (let [eth (.-eth web3)
-              coinbase (.-coinbase eth)
-              ch (chan)]
-             (println "coinbase:" coinbase))
+            (.post shh
+                   (clj->js {:from myIdentity
+                             :topic [(.fromAscii web3 "Topic(AppName)")]
+                             :payload (.fromAscii web3 "What is your name?")
+                             :ttl 100
+                             :priority 100}))
+
+            (.watch (.filter shh (clj->js [(.fromAscii web3 "Topic(AppName)")
+                                           myIdentity ] ) )
+                    (fn [err _res]
+                        (let [res (js->clj _res {:keywordize-keys true})]
+                            (println "Reply from "
+                                     (.toAscii web3 (get res "payload"))
+                                     " whose address is "
+                                     (get res "from")
+                                     ))) )
+
+            (let [eth (.-eth web3)
+                  coinbase (.-coinbase eth)
+                  ch (chan)]
+                (println "coinbase:" coinbase))
+            )
+        )
     )
-)
 
 (set! *main-cli-fn* -main)
