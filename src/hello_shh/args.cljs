@@ -13,17 +13,6 @@
     :id :name
     :default "TestOrg"
     ]
-   ["-s" "--system SystemAccoutAddress" "System account's address"
-    :id :system
-    :missing "-s is needed."
-    :validate [#(not (nil? %)) "Must be set"]
-    ]
-   ["-a" "--systemagent SystemAgentAddress" "System account's address"
-    :id :sysagent
-    :missing "-a is needed."
-    :validate [#(not (nil? %)) "Must be set"]
-    ]
-   ;; A boolean option defaulting to nil
    ["-h" "--help"]])
 
 (defn parseOpts [args]

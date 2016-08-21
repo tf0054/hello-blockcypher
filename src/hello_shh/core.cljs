@@ -15,52 +15,9 @@
 
 (def fs (nodejs/require "fs"))
 (def opn (nodejs/require "opn"))
-;(def ping (nodejs/require "ping"))
 (def web3obj (nodejs/require "web3"))
 
 (defonce ls-db (atom {}))
-
-(defn- getAbi [x]
-    {:systemContract (js->clj (.-abiDefinition
-                                  (.-info (.-systemContract x))))
-     :applicantContract (js->clj (.-abiDefinition
-                                     (.-info (.-applicantContract x))))
-     :organizationContract (js->clj (.-abiDefinition
-                                        (.-info (.-organizationContract x)))) }
-    )
-
-(defn- getSA [eth agentAddr x]
-    (.at (.contract eth (.-abiDefinition
-                            (.-info (.-systemContract x)))
-                    ) agentAddr)
-    )
-
-(defn- addOrgCore [eth orgName orgAddr agentAddr]
-    (let [strSol (.readFileSync fs (str js/__dirname "/../../dapp/resume.sol")
-                                "utf-8")
-          bytecode (.solidity (.-compile eth) strSol)
-          abi (getAbi bytecode)
-          systenAgent (getSA eth agentAddr bytecode) ]
-
-        (let [esGas (.estimateGas (.-addOrganization systenAgent)
-                                  orgName
-                                  (clj->js {:from orgAddr}))
-              tHash (.addOrganization systenAgent
-                                      orgName
-                                      (clj->js {:from orgAddr
-                                                :gas esGas}))
-              ]
-            (println "Gas(estimate):" esGas)
-
-            [tHash abi systenAgent]
-            )
-        )
-    )
-
-(defn- getAgentCore [eth abi account agentAddr]
-    (let [systenAgent (.at (.contract eth abi) agentAddr)]
-        (.getOrganizationAgent systenAgent
-                                      (clj->js {:from account})) ) )
 
 (defn -main [& args]
     ; checking args
@@ -70,9 +27,7 @@
             (do (println (:errors x) "\n" "How to use:")
                 (utils/nprint (:summary x))
                 (.exit js/process 1))
-            (do (swap! ls-db merge o) ) )
-            ;(print x)
-        )
+            (do (swap! ls-db merge o) ) ) )
     ; main
     (let [web3 (web3obj.)
           web3prov (web3obj.providers.HttpProvider. (:geth @ls-db))]
@@ -94,12 +49,11 @@
             (.watch (.filter shh (clj->js [(.fromAscii web3 "Topic(AppName)")
                                            myIdentity ] ) )
                     (fn [err _res]
-                        (let [res (js->clj _res {:keywordize-keys true})]
+                        (let [res (js->clj _res :keywordize-keys true)]
                             (println "Reply from "
-                                     (.toAscii web3 (get res "payload"))
+                                     (.toAscii web3 (:payload res))
                                      " whose address is "
-                                     (get res "from")
-                                     ))) )
+                                     (:from res) ))) )
 
             (let [eth (.-eth web3)
                   coinbase (.-coinbase eth)
