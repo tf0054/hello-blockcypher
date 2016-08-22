@@ -1,9 +1,11 @@
 (ns hello-shh.core
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]]
+                   
                    )
   (:require [clojure.browser.repl :as repl]
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
+            [cljs-callback-heaven.core :as h]
             [hello-shh.args :as args]
             [hello-shh.utils :as utils]
             [hello-shh.express :as express]
@@ -40,20 +42,20 @@
                          (.run db "CREATE TABLE lorem (info TEXT)")
                          (let [stmt (.prepare db "INSERT INTO lorem VALUES (?)")]
                            (println "Write:")
-                           (doall
-                            (for [i (range 10)]
-                              (.run stmt (str "Ipsum" i) #(println "w")) ) )                           
+                           (doall (for [i (range 10)]
+                                    (.run stmt (str "Ipsum" i) #(println "w")) ) )                           
                            (.finalize stmt) )
                          (.all db
                                "SELECT rowid AS id, info FROM lorem"
-                               (fn [err _row]
-                                 (println "Read:")
-                                 (if (nil? err)
-                                   (go (let [row (js->clj _row :keywordize-keys true)]
-                                         (doall (for [x row]
-                                                  (println (:id x) ":" (:info x)) )) )
-                                       (>! c 1) )
-                                   (println "ERR on reading") ) ) ) ))
+                               (h/>? c) ) ))
+        
+        (go (let [x (<! c) ; if err occured, num of args would become 2?
+                  row (js->clj x :keywordize-keys true)]
+              (println "Read:")
+              (doall (for [y row]
+                       (println (:id y) ":" (:info y)) ))
+              (>! c 1) ) )
+        
         (go (let [x (<! c)]
               (println "Close.")
               (.close db) ) )
