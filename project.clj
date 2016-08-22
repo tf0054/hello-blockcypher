@@ -22,6 +22,7 @@
                        [crypto-js "3.1.6"]
                        [bignumber.js "2.4.0"]
                        [web3 "0.16.0"]
+                       [sqlite3 "3.1.4"]
     ]}
 ; :main "release/hello_shh.js"
   :source-paths ["src" "target/classes"]

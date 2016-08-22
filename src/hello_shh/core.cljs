@@ -16,18 +16,38 @@
 (def fs (nodejs/require "fs"))
 (def opn (nodejs/require "opn"))
 (def web3obj (nodejs/require "web3"))
+(def sqlite3 (nodejs/require "sqlite3"))
 
 (defonce ls-db (atom {}))
 
 (defn -main [& args]
     ; checking args
     (let [x (args/parseOpts args)
-          o (:options x)]
+          o (:options x)
+          _db (.-Database sqlite3)
+          db (_db. "test.db")]
         (if (or (not (nil? (x :errors))) (contains? o :help))
             (do (println (:errors x) "\n" "How to use:")
                 (utils/nprint (:summary x))
                 (.exit js/process 1))
-            (do (swap! ls-db merge o) ) ) )
+            (do (swap! ls-db merge o) ) )
+
+        (.serialize db (fn []
+                         (.run db "CREATE TABLE lorem (info TEXT)")
+                         (let [stmt (.prepare db "INSERT INTO lorem VALUES (?)")]
+                           (for [i (range 10)]
+                             (.rum stmt (str "Ipsum" i))    )
+                           (.finalize stmt) )
+                         (.each db
+                                "SELECT rowid AS id, info FROM lorem"
+                                (fn [err _row]
+                                  (let [row (js->clj _row)]
+                                    (println (:id row) ":" (:info row)) )
+                                  ))
+                         ))
+        (.close db)
+        
+        )
     ; main
     (let [web3 (web3obj.)
           web3prov (web3obj.providers.HttpProvider. (:geth @ls-db))]
