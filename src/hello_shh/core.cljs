@@ -1,5 +1,6 @@
 (ns hello-shh.core
-  (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
+  (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]]
+                   )
   (:require [clojure.browser.repl :as repl]
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
@@ -25,7 +26,8 @@
     (let [x (args/parseOpts args)
           o (:options x)
           _db (.-Database sqlite3)
-          db (_db. "test.db")]
+          db (_db. "test.db")
+          c (chan 1)]
         (if (or (not (nil? (x :errors))) (contains? o :help))
             (do (println (:errors x) "\n" "How to use:")
                 (utils/nprint (:summary x))
@@ -33,24 +35,32 @@
             (do (swap! ls-db merge o) ) )
 
         (.serialize db (fn []
+                         (println "Prepared.")
+                         (.run db "DROP TABLE IF EXISTS lorem")
                          (.run db "CREATE TABLE lorem (info TEXT)")
                          (let [stmt (.prepare db "INSERT INTO lorem VALUES (?)")]
-                           (for [i (range 10)]
-                             (.rum stmt (str "Ipsum" i))    )
+                           (println "Write:")
+                           (doall
+                            (for [i (range 10)]
+                              (.run stmt (str "Ipsum" i) #(println "w")) ) )                           
                            (.finalize stmt) )
-                         (.each db
-                                "SELECT rowid AS id, info FROM lorem"
-                                (fn [err _row]
-                                  (let [row (js->clj _row)]
-                                    (println (:id row) ":" (:info row)) )
-                                  ))
-                         ))
-        (.close db)
-        
+                         (.all db
+                               "SELECT rowid AS id, info FROM lorem"
+                               (fn [err _row]
+                                 (println "Read:")
+                                 (if (nil? err)
+                                   (go (let [row (js->clj _row :keywordize-keys true)]
+                                         (doall (for [x row]
+                                                  (println (:id x) ":" (:info x)) )) )
+                                       (>! c 1) )
+                                   (println "ERR on reading") ) ) ) ))
+        (go (let [x (<! c)]
+              (println "Close.")
+              (.close db) ) )
         )
     ; main
-    (let [web3 (web3obj.)
-          web3prov (web3obj.providers.HttpProvider. (:geth @ls-db))]
+  (let [web3     (web3obj.)
+        web3prov (web3obj.providers.HttpProvider. (:geth @ls-db))]
         ; init
         (.setProvider web3 web3prov)
         ; exec
