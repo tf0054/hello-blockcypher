@@ -1,6 +1,5 @@
 (ns hello-shh.core
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]]
-                   
                    )
   (:require [clojure.browser.repl :as repl]
             [cljs.nodejs :as nodejs]
@@ -45,9 +44,20 @@
                            (doall (for [i (range 10)]
                                     (.run stmt (str "Ipsum" i) #(println "w")) ) )                           
                            (.finalize stmt) )
-                         (.all db
-                               "SELECT rowid AS id, info FROM lorem"
-                               (h/>? c) ) ))
+                         (go (>! c 1) )
+                         ))
+
+        (go (let [x (<! c)]
+              (println "Updated:")
+              (.run db
+                    "UPDATE lorem SET info = ? WHERE rowid = ?" "bar" 2)
+              (>! c 1) ) )
+        
+        (go (let [x (<! c)]
+              (.all db
+                    "SELECT rowid AS id, info FROM lorem"
+                    (h/>? c) )
+              ) )
         
         (go (let [x (<! c) ; if err occured, num of args would become 2?
                   row (js->clj x :keywordize-keys true)]
