@@ -1,5 +1,6 @@
 (ns hello-shh.core
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]]
+                   [cljs-callback-heaven.macros :refer [<?]]
                    )
   (:require [clojure.browser.repl :as repl]
             [cljs.nodejs :as nodejs]
@@ -29,6 +30,7 @@
           _db (.-Database sqlite3)
           db (_db. "test.db")
           c (chan 1)]
+
         (if (or (not (nil? (x :errors))) (contains? o :help))
             (do (println (:errors x) "\n" "How to use:")
                 (utils/nprint (:summary x))
@@ -42,33 +44,31 @@
                          (let [stmt (.prepare db "INSERT INTO lorem VALUES (?)")]
                            (println "Write:")
                            (doall (for [i (range 10)]
-                                    (.run stmt (str "Ipsum" i) #(println "w")) ) )                           
+                                    (.run stmt (str "Ipsum" i) #(println "w")) ) )
                            (.finalize stmt) )
                          (go (>! c 1) )
                          ))
 
-        (go (let [x (<! c)]
-              (println "Updated:")
-              (.run db
-                    "UPDATE lorem SET info = ? WHERE rowid = ?" "bar" 2)
-              (>! c 1) ) )
-        
+        (<? (do (println "Updated:")
+                (.run db
+                      "UPDATE lorem SET info = ? WHERE rowid = ?" "bar" 2)
+                ) "ERR" c)
+
         (go (let [x (<! c)]
               (.all db
                     "SELECT rowid AS id, info FROM lorem"
                     (h/>? c) )
               ) )
-        
+
         (go (let [x (<! c) ; if err occured, num of args would become 2?
                   row (js->clj x :keywordize-keys true)]
               (println "Read:")
               (doall (for [y row]
                        (println (:id y) ":" (:info y)) ))
               (>! c 1) ) )
-        
-        (go (let [x (<! c)]
-              (println "Close.")
-              (.close db) ) )
+
+        (<? (do (println "Close.")
+                (.close db) ) "ERR" c)
         )
     ; main
   (let [web3     (web3obj.)
