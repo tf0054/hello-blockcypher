@@ -11,4 +11,4 @@ pom.xml
 node_modules
 .lein-classpath
 
-!/release/hello_npm.js
+!/release/hello_ssh.js

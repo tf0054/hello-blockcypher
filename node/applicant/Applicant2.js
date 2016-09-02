@@ -12,21 +12,21 @@ var _react2 = _interopRequireDefault(_react);
 
 var _reactBootstrap = require('react-bootstrap');
 
-var _web = require('web3');
+var _web = require('/work/tf0054/work/hello-shh/node_modules/web3');
 
 var _web2 = _interopRequireDefault(_web);
 
 var _configure = require('../configure.js');
 
-var _Profile = require('./Profile2.jsx');
+var _Profile = require('./Profile2.js');
 
 var _Profile2 = _interopRequireDefault(_Profile);
 
-var _Resumes = require('./Resumes2.jsx');
+var _Resumes = require('./Resumes2.js');
 
 var _Resumes2 = _interopRequireDefault(_Resumes);
 
-var _Permissions = require('./Permissions2.jsx');
+var _Permissions = require('./Permissions2.js');
 
 var _Permissions2 = _interopRequireDefault(_Permissions);
 

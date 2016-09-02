@@ -18,7 +18,7 @@ var _moment2 = _interopRequireDefault(_moment);
 
 var _configure = require('../configure');
 
-var _Alert = require('../Alert.jsx');
+var _Alert = require('../Alert.js');
 
 var _Alert2 = _interopRequireDefault(_Alert);
 

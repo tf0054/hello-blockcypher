@@ -66,7 +66,7 @@
                                 (swap! app-db assoc-in [:loop] false)
                                 ;(<! (timeout 410)) ; flush final "."
                                 (println "")
-                                (nprint (str "Tx completed:" data))
+                                (nprint "Tx completed:" data)
                                 ) ) ) )
         )
     (go (swap! app-db assoc-in [:loop] true)
