@@ -19,7 +19,6 @@
 (def opn (nodejs/require "opn"))
 (def web3obj (nodejs/require "web3"))
 (def sqlite3 (nodejs/require "sqlite3"))
-(def applicant (nodejs/require "/work/tf0054/work/hello-shh/node/applicant/Permissions2.js"))
 (def resume (nodejs/require "/work/tf0054/work/hello-shh/node/applicant/Resumes2.js"))
 
 (defonce db-args (atom {}))
@@ -99,20 +98,14 @@
           (.setProvider web3 web3prov)
           ; exec
 
-          (let [_god (.-default applicant) 
-                god  (_god. web3 "0" "Topic1" )]
-            (println "god:" god))
-          
           (go (let [x (<! c)]
-                (let [_god (.-default resume) 
-                      god  (_god.)
+                (let [resumeCljs  (new (.-default resume) (clj->js {:web3 web3}))
                       prop {:abi (:abi (:sys @db-locl))
-                            :web3 web3
                             :systemAgent (:systemagent (:sys @db-locl))
                             }
                       ]
                   
-                  (println "god-res:" (.loadOrganizations god (clj->js prop)))  
+                  (println "god-res:" (.loadOrganizations resumeCljs (clj->js prop)))  
                   )    
                 ) )          
 

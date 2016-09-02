@@ -59,8 +59,7 @@ var Resumes2 = function (_Component) {
     value: function loadOrganizations(props) {
       var abi = JSON.parse(props.abi);
 
-//      var eth = this.props.web3.eth;
-      var eth = props.web3.eth;
+      var eth = this.props.web3.eth;
       var instance = eth.contract(abi[_configure.SYSTEM_CONTRACT_NAME]).at(props.systemAgent);
 
       var size = instance.sizeOrganizations().toNumber();
