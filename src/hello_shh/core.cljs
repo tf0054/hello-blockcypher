@@ -27,7 +27,7 @@
 (defonce db-args (atom {}))
 (defonce db-locl (atom {}))
 
-(defn- mkMap [db tbl c]
+(defn- mkMap [db tbl amap c]
   (go (let [x (<! c)]
         (.all db
               (str "SELECT id,name,value FROM " tbl)
@@ -38,9 +38,19 @@
             row (js->clj x :keywordize-keys true)]
         (println "Read: " tbl)
         (doall (for [y row]
-                 (swap! db-locl
+                 (swap! amap
                         assoc-in [:sys (keyword (:name y))] (:value y)) ))
-        (>! c @db-locl) ) )
+        (>! c @amap) ) )
+  )
+
+(defn replaceSetState [obj]
+  (set! (.-setState obj)
+        (fn [x]
+          (utils-merge (.-state obj) x) ) )
+  )
+
+(defn mkStateVal [x]
+  (clj->js {:target {:value x}})
   )
 
 (defn -main [& args]
@@ -60,13 +70,13 @@
 
         (go (>! c 1) )
 
-        (go (let [x (<! c)]  
-              (println "Updated:")
-              (.run db
-                    "UPDATE lorem SET info = ? WHERE rowid = ?" "bar" 2)
-              (>! c 1) ) )
+        ;; (go (let [x (<! c)]
+        ;;       (println "Updated:")
+        ;;       (.run db
+        ;;             "UPDATE lorem SET info = ? WHERE rowid = ?" "bar" 2)
+        ;;       (>! c 1) ) )
 
-        (mkMap db "sys" c)
+        (mkMap db "sys" db-locl c)
 
         (go (let [x (<! c)]
               (println "RES:" x)
@@ -90,21 +100,28 @@
                       ]
 
                   ; replace Component's setState bc it checks "mounted" status.
-                  (set! (.-setState profileCljs)
-                        (fn [x]
-                          ;; (println x "," (.-state profileCljs))
-                          (utils-merge (.-state profileCljs) x) ) )
+                  (replaceSetState resumeCljs)
+                  (replaceSetState profileCljs)
 
-                  (.nameChange profileCljs (clj->js {:target {:value "test3"}}))
-                  (.birthdayChange profileCljs (clj->js {:target {:value "1976/12/06"}}))
-                  
-                  (println "props:" (.-props profileCljs))
-                  (println "state:" (.-state profileCljs))
-                  (println "god-res:" (.loadOrganizations resumeCljs (clj->js prop)))  
-                  )    
+                  ; changing Resume state
+                  (.organizationChange resumeCljs (mkStateVal "test3"))
+                  (.fromChange resumeCljs (mkStateVal "2001/04"))
+                  (.toChange resumeCljs (mkStateVal "2003/03"))
+
+                  ; changing Profile state
+                  (.nameChange profileCljs (mkStateVal "test3"))
+                  (.birthdayChange profileCljs (mkStateVal "1976/12/06"))
+
+                  (println "props(R):" (.-props resumeCljs))
+                  (println "props(P):" (.-props profileCljs))
+
+                  (println "state(R):" (.-state resumeCljs))
+                  (println "state(P):" (.-state profileCljs))
+
+                  (println "god-res:" (.loadOrganizations resumeCljs (clj->js prop))))
+
                 (let [eth      (.-eth web3)
-                      coinbase (.-coinbase eth)
-                      ch       (chan)]
+                      coinbase (.-coinbase eth)]
                   (println "coinbase:" coinbase))
                 )
               )
