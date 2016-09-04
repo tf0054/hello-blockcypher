@@ -26,8 +26,8 @@
 (def resume (nodejs/require "/work/tf0054/work/hello-jsx/node/applicant/Resumes2.js"))
 (def oprofile (nodejs/require "/work/tf0054/work/hello-jsx/node/organization/Profile2.js"))
 (def aprofile (nodejs/require "/work/tf0054/work/hello-jsx/node/applicant/Profile2.js"))
+(def organization (nodejs/require "/work/tf0054/work/hello-jsx/node/organization/Organization.js"))
 (def oagent (nodejs/require "/work/tf0054/work/hello-jsx/node/organization/Agent2.js"))
-;(def aagent (nodejs/require "/work/tf0054/work/hello-jsx/node/applicant/Agent2.js"))
 
 (defonce db-args (atom {}))
 (defonce db-locl (atom {}))
@@ -68,43 +68,36 @@
   (swap! db-orgn assoc :account account
                        :password password
                        :unlockTime unlockTime)
-  ;; (<? (do (println "Inserting:")
-  ;;         (.run db
-  ;;               "INSERT INTO org(org,name,value) values(?,?,?)" name "account" account)
-  ;;         ) "ERR" c)
-  ;; (<? (do (println "Inserting:")
-  ;;         (.run db
-  ;;               "INSERT INTO org(org,name,value) values(?,?,?)" name "unlockTime" unlockTime)
-  ;;         ) "ERR" c)
-  ;; (<? (do (println "Inserting:")
-  ;;         (.run db
-  ;;               "INSERT INTO org(org,name,value) values(?,?,?)" name "unlockTime" unlockTime)
-  ;;         ) "ERR" c)  
   )
 
 (defn aonSave [objJs]
-  (let [objRet (js->clj objJs {:keywordize-keys true})]
-    (println "Org name:" objRet
-             (:name objRet))
+  (let [objRet (js->clj objJs :keywordize-keys true)]
+    (println "Org name:" objRet)
     (swap! db-orgn assoc
            :name (:name objRet)
-           :identity (:identity objRet)
-           :createTime (:createTime objRet) )
-    ))
+           :profile objRet) ))
+
+(defn agentOnStarted [d x]
+  (println "Org-Agent:" x)
+  (swap! db-orgn assoc
+         :agent x)
+  (go (>! d 1))
+  )
 
 (defn writeOrg [db atomdb c]
   (.serialize db (fn []
                    (let [stmt (.prepare db "INSERT INTO org(org,name,value) VALUES (?,?,?)")]
                      (println "Write:")
                      (doall (map #(let [strKey (name %)
-                                        strVal (% @atomdb)]
+                                        strVal (if (= cljs.core/PersistentArrayMap (type (% @atomdb)))
+                                                 (.stringify js/JSON (clj->js (% @atomdb)))
+                                                 (% @atomdb) )]
                                     (println % (% @atomdb))
                                     (.run stmt (:name @atomdb) strKey strVal
-                                          (fn []
-                                            (println "w"))))
+                                          (fn [x]
+                                            (println "w" x))))
                                  (keys @atomdb)))
                      (.finalize stmt) )
-                   ;(go (>! c 1) )
                    ))
   )
 
@@ -122,9 +115,8 @@
                 (.exit js/process 1))
             (do (swap! db-args merge o) ) )
 
-        (go (>! c 1))
-
         (mkMap db "sys" db-locl c)
+        (go (>! c 1))
 
         ; main
         (let [web3     (web3obj.)
@@ -137,36 +129,21 @@
                 ; exec
                 (let [eth      (.-eth web3)
                       coinbase (.-coinbase eth)
-                      resumeCljs (new (.-default resume) (clj->js {:web3 web3}))
-                      prop       {:abi         (:abi (:sys @db-locl))
-                                  :systemAgent (:systemagent (:sys @db-locl))}
                       ]
 
-                  ; replace Component's setState bc it checks "mounted" status.
-                  (replaceSetState resumeCljs)
-
-                  ; changing Resume state
-                  (.organizationChange resumeCljs (mkStateVal "test3"))
-                  (.fromChange resumeCljs (mkStateVal "2001/04"))
-                  (.toChange resumeCljs (mkStateVal "2003/03"))
-
-                  (println "props(R):" (.-props resumeCljs))
-                  (println "state(R):" (.-state resumeCljs))
-
-                  (println "coinbase:" coinbase)
                   (go (>! d 1))
 
-                  (go (let [x (<! d)]
-                        (println "unlocking.." coinbase)
+                  (<? (do (println "unlocking coinbase.." coinbase)
                         ;(utils/unlockAccount web3 coinbase "password" 3600)
-                        (>! d 1) ))          
-
+                        ) "ERR" d)
+                  
                   ; create org
                   (go (let [x (<! d)]
                         (println "creating... new")
                         (let [accountCljs (new (.-default account)
                                                (clj->js {:web3          web3
                                                          :onCreated     aonCreated
+                                                         :onUnlocked #(println "onUnlocked" %)
                                                          :onTransferred (partial onTransferred d)}))]
                           (replaceSetState accountCljs)
                           (.setState accountCljs (clj->js {:password "password"}))
@@ -179,7 +156,7 @@
                                    :password "password"
                                    :unlockTime "1472998353636") )
                           )
-                        ; Channel was filled in onTransfereed callback.
+                        ; Channel should be filled in onTransfereed callback.
                         ; (>! d 1)
                         ) )
 
@@ -189,29 +166,48 @@
                                                 (clj->js {:web3   web3
                                                           :onSave aonSave}))]
                           (replaceSetState oprofileCljs)
-                          (println "props(oP):" (.-props oprofileCljs))
-                          (println "state(oP):" (.-state oprofileCljs))
                           (.nameChange oprofileCljs (mkStateVal
                                                      (str "Org_" (utils/fixed-length-password 4))))
+                          (println "props(oP):" (.-props oprofileCljs))
+                          (println "state(oP):" (.-state oprofileCljs))
                           (.saveClick oprofileCljs))
                         (>! d 1) ))
 
                   (go (let [x (<! d)]
+                        (let [organizationCljs (new (.-default organization)
+                                                    (clj->js {:web3 web3}))]
+
+                          (replaceSetState organizationCljs)
+                          (.setState organizationCljs (clj->js {:account (:account @db-orgn)}))
+                          (.accountUnlocked organizationCljs (:password @db-orgn) (:unlockTime @db-orgn))
+
+                          (println "starting org agent... new")
+                          (let [orgProps    (.-state organizationCljs)
+                                agentParams (clj->js {:web3                web3
+                                                      :account             (:account @db-orgn)
+                                                      :password            (:password @db-orgn) 
+                                                      :profile             (:profile @db-orgn)
+                                                      :lockedTime          (.-lockedTime orgProps)
+                                                      :balance             (.-balance orgProps)
+                                                      :abi                 (:abi (:sys @db-locl))
+                                                      :systemAgent         (:systemagent (:sys @db-locl))
+                                                      :onStarted           (partial agentOnStarted d)
+                                                      :accountAutoUnlocked #(println "accountAutoUnlocked" %)
+                                                      })
+                                oagentCljs  (new (.-default oagent) agentParams)]
+                            (println "AgentParams:" agentParams)
+                            (replaceSetState oagentCljs)
+                            (.startAgentClick oagentCljs)
+                            ; Channel should be filled in onStarted callback.
+                            ; (>! d 1)
+                            )
+                          )
+                        )
+                      )
+
+                  (go (let [x (<! d)]
                         (writeOrg db db-orgn d)
                         (>! d 1) ))
-
-                  ;; (go (let [x (<! d)]
-                  ;;     (let [oagentCljs (new (.-default oagent) (clj->js {:web3 web3
-                  ;;                                                            :account nil
-                  ;;                                                            :password nil
-                  ;;                                                            :lockedTime nil
-                  ;;                                                            :abi nil
-                  ;;                                                            :systemAgent nil
-                  ;;                                                            :profile nil
-                  ;;                                                            :onStarted nil
-                  ;;                                                            }))]
-                  ;;       (.startAgentClick oagentCljs)
-                  ;;       (>! d 1) )))
 
                   (go (let [x (<! d)]
                         (println "Close.")
@@ -228,7 +224,7 @@
                   ;;   (println "props(aP):" (.-props aprofileCljs))
                   ;;   (println "state(aP):" (.-state aprofileCljs)))
 
-                  (println "god-res:" (.loadOrganizations resumeCljs (clj->js prop))))
+                  )
                 )
               )
           )

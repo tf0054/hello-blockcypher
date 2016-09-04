@@ -22,27 +22,27 @@ var _bignumber2 = _interopRequireDefault(_bignumber);
 
 var _configure = require('../configure');
 
-var _Account = require('../Account.jsx');
+var _Account = require('../Account.js');
 
 var _Account2 = _interopRequireDefault(_Account);
 
-var _Balance = require('../Balance.jsx');
+var _Balance = require('../Balance.js');
 
 var _Balance2 = _interopRequireDefault(_Balance);
 
-var _Profile = require('./Profile.jsx');
+var _Profile = require('./Profile.js');
 
 var _Profile2 = _interopRequireDefault(_Profile);
 
-var _Agent = require('./Agent.jsx');
+var _Agent = require('./Agent.js');
 
 var _Agent2 = _interopRequireDefault(_Agent);
 
-var _Approvals = require('./Approvals.jsx');
+var _Approvals = require('./Approvals.js');
 
 var _Approvals2 = _interopRequireDefault(_Approvals);
 
-var _Permissions = require('./Permissions.jsx');
+var _Permissions = require('./Permissions.js');
 
 var _Permissions2 = _interopRequireDefault(_Permissions);
 
