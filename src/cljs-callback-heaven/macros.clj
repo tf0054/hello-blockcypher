@@ -12,7 +12,13 @@
       `(cljs.core.async.macros/go 
          (let [~c (cljs.core.async/chan 1)]
            ~(replace {'_ `(cljs-callback-heaven.core/>? ~c ~E-msg)} func)
-           (cljs.core.async/<! ~c))))))
+           (cljs.core.async/<! ~c)))))
+  ([func E-msg chan]
+    (let [c (gensym "c")]
+      `(cljs.core.async.macros/go (let [_ `(cljs.core.async/<! chan)]
+         (let [~c (cljs.core.async/chan 1)]
+           ~(replace {'_ `(cljs-callback-heaven.core/>? ~c ~E-msg)} func)
+           `(cljs.core.async/>! chan ~@(cljs.core.async/<! ~c)) )) ))))
 
 (defmacro <1 
   ([func]

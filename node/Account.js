@@ -16,7 +16,7 @@ var _configure = require('./configure');
 
 var _utils = require('./utils');
 
-var _Alert = require('./Alert.jsx');
+var _Alert = require('./Alert.js');
 
 var _Alert2 = _interopRequireDefault(_Alert);
 
