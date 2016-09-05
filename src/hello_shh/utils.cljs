@@ -14,13 +14,9 @@
 (defn fixed-length-password
   ([] (fixed-length-password 8))
   ([n]
-   (let [chars-between #(map char (range (int %1) (inc (int %2))))
-         chars         (concat (chars-between \0 \9)
-                               (chars-between \a \z)
-                               (chars-between \A \Z)
-                               [\_])
-         password      (take n (repeatedly #(rand-nth chars)))]
-     (reduce str password))))
+   (let [r (repeatedly 30 (fn [] (.toString (rand-int 16) 16)))]
+     (apply str (concat (take n r))))
+   ))
 
 ; - -
 

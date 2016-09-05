@@ -23,6 +23,8 @@
                        [bignumber.js "2.4.0"]
                        [web3 "0.16.0"]
                        [sqlite3 "3.1.4"]
+                       [node-localstorage "1.3.0"]
+                       [log4js "0.6.38"]
                       ]}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release"]
