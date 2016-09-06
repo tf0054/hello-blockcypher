@@ -39,7 +39,7 @@
   
   (go (let [x (<! c) ; if err occured, num of args would become 2?
             row (js->clj x :keywordize-keys true)]
-        (println "Read: " tbl)
+        (println "Reading config database")
         (doall (for [y row]
                  (swap! amap
                         assoc-in [:sys (keyword (:name y))] (:value y)) ))
@@ -92,114 +92,114 @@
   (let [x   (args/parseOpts args)
         o   (:options x)]
 
-        (if (or (not (nil? (x :errors))) (contains? o :help))
-            (do (println (:errors x) "\n" "How to use:")
-                (utils/nprint (:summary x))
-                (.exit js/process 1))
-            (do (swap! db-args merge o) ) )
+                                        ; processing args
+    (if (args/checkHelp x o)
+      (args/showHowTo x)
+      (do (swap! db-args merge o) ) )
 
-        ; main
-        (let [web3     (web3obj.)
-              web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
-              ;; logger (.getLogger log4js)
-              _db (.-Database sqlite3)
-              db  (new _db "test.db")
-              d   (chan 1)]
-          ; init web3
-          (.setProvider web3 web3prov)
+                                        ; main
+    (let [web3     (web3obj.)
+          web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
+          ;; logger (.getLogger log4js)
+          _db      (.-Database sqlite3)
+          db       (new _db "test.db")
+          d        (chan 1)]
+                                        ; init web3
+      (.setProvider web3 web3prov)
 
-          ; exec
-          (let [eth              (.-eth web3)
-                coinbase         (.-coinbase eth)
-                _orgCljs         (.-default organization)
-                organizationCljs (new _orgCljs
-                                      (clj->js {:web3 web3}))
-                ]
+                                        ; exec
+      (let [eth              (.-eth web3)
+            coinbase         (.-coinbase eth)
+            _orgCljs         (.-default organization)
+            organizationCljs (new _orgCljs
+                                  (clj->js {:web3 web3}))
+            ]
 
-            (replaceWebFuncs organizationCljs)
+        (replaceWebFuncs organizationCljs)
 
-            (go (>! d 1))
+        (go (>! d 1))
 
-            ; getting params from database (abi etc.)
-            (mkMap db "sys" db-locl d)
+                                        ; getting params from database (abi etc.)
+        (mkMap db "sys" db-locl d)
 
-            (<? (do (println "unlocking coinbase.." coinbase)
-                    (utils/unlockAccount web3 coinbase "password" 3600)
-                    ) "ERR" d)
+        (<? (if (:unlockCB @db-args)
+              (do (println "unlocking coinbase.." coinbase)
+                  (utils/unlockAccount web3 coinbase "password" 3600))
+              (println "Skipped unlock coinbase")) "ERR" d)
 
-            ; create account
-            (go (let [x (<! d)]
-                  (println "creating... new")
-                  (let [accountCljs (new (.-default account)
-                                         (clj->js {:web3          web3
-                                                   :onCreated     #(.accountCreated organizationCljs %1 %2 %3)
-                                                   :onUnlocked    #(.accountUnlocked organizationCljs %1 %2)
-                                                   :onTransferred #(do
-                                                                     (.transferred organizationCljs %1)
-                                                                     (go (>! d 1))) }))]
-                    (replaceWebFuncs accountCljs)
-                    (.setState accountCljs (clj->js {:password "password"}))
+                                        ; create account
+        (go (let [x (<! d)]
+              (println "creating... new")
+              (let [accountCljs (new (.-default account)
+                                     (clj->js {:web3          web3
+                                               :onCreated     #(.accountCreated organizationCljs %1 %2 %3)
+                                               :onUnlocked    #(.accountUnlocked organizationCljs %1 %2)
+                                               :onTransferred #(do
+                                                                 (.transferred organizationCljs %1)
+                                                                 (go (>! d 1))) }))]
+                (replaceWebFuncs accountCljs)
+                (.setState accountCljs (clj->js {:password "password"}))
                                         ;(println "props(o):" (.-props organizationCljs))
-                    (print "props(o):" (.-props organizationCljs))
-                    (.createAccountClick accountCljs)
-                    )
-                  ; Channel should be filled in onTransfereed callback.
-                  ; (>! d 1)
-                  ) )
+                                        ;(print "props(o):" (.-props organizationCljs))
+                (.createAccountClick accountCljs)
+                )
+                                        ; Channel should be filled in onTransfereed callback.
+                                        ; (>! d 1)
+              ) )
 
-            ; adding profile to org obj
-            (go (let [x (<! d)]
-                  (println "setting profile... new")
-                  (let [oprofileCljs (new (.-default oprofile)
-                                          (clj->js {:web3   web3
-                                                    :onSave #(.saveProfile organizationCljs %1)}))]
-                    (replaceWebFuncs oprofileCljs)
-                    (.nameChange oprofileCljs (mkStateVal
-                                               (str "Org_" (utils/fixed-length-password 4))))
-                    (.saveClick oprofileCljs))
-                  (>! d 1) ))
+                                        ; adding profile to org obj
+        (go (let [x (<! d)]
+              (println "setting profile... new")
+              (let [oprofileCljs (new (.-default oprofile)
+                                      (clj->js {:web3   web3
+                                                :onSave #(.saveProfile organizationCljs %1)}))]
+                (replaceWebFuncs oprofileCljs)
+                (.nameChange oprofileCljs (mkStateVal
+                                           (str (:orgPostfix @db-args))))
+                (.saveClick oprofileCljs))
+              (>! d 1) ))
 
-            ; adding agent to org obj
-            (go (let [x (<! d)]
-                  (println "starting org agent... new")
-                  (let [orgState   (.-state organizationCljs)
-                        orgParams  (clj->js {:web3                web3
-                                             :account             (.-account orgState)
-                                             :password            (.-password orgState) 
-                                             :profile             (js->clj (.-profile orgState))
-                                             :lockedTime          (.-lockedTime orgState)
-                                             :balance             (.-balance orgState)
-                                             :abi                 (:abi (:sys @db-locl))
-                                             :systemAgent         (:systemagent (:sys @db-locl))
-                                             :accountAutoUnlocked #(.accountAutoUnlocked organizationCljs %1)
-                                             :onStarted           #(do
-                                                                     (.agentStarted organizationCljs %1)
-                                                                     (go (>! d 1)))
-                                             })
-                        oagentCljs (new (.-default oagent) orgParams)]
-                    (replaceWebFuncs oagentCljs)
-                    (.startAgentClick oagentCljs)
-                    ; Channel should be filled in onStarted callback.
-                    ; (>! d 1)
-                    )
-                  ))
+                                        ; adding agent to org obj
+        (go (let [x (<! d)]
+              (println "starting org agent... new")
+              (let [orgState   (.-state organizationCljs)
+                    orgParams  (clj->js {:web3                web3
+                                         :account             (.-account orgState)
+                                         :password            (.-password orgState) 
+                                         :profile             (js->clj (.-profile orgState))
+                                         :lockedTime          (.-lockedTime orgState)
+                                         :balance             (.-balance orgState)
+                                         :abi                 (:abi (:sys @db-locl))
+                                         :systemAgent         (:systemagent (:sys @db-locl))
+                                         :accountAutoUnlocked #(.accountAutoUnlocked organizationCljs %1)
+                                         :onStarted           #(do
+                                                                 (.agentStarted organizationCljs %1)
+                                                                 (go (>! d 1)))
+                                         })
+                    oagentCljs (new (.-default oagent) orgParams)]
+                (replaceWebFuncs oagentCljs)
+                (.startAgentClick oagentCljs)
+                                        ; Channel should be filled in onStarted callback.
+                                        ; (>! d 1)
+                )
+              ))
 
-            ; writing created org to db
-            (go (let [x (<! d)
-                      orgRaw (js->clj (.-state organizationCljs) :keywordize-keys true)
-                      orgRax (assoc orgRaw :name (:name (:profile orgRaw)))
-                      orgPms (dissoc orgRax :abi :systemAgent :balance)]
-                  (println "state(o):" orgRax)
-                  (writeOrg db orgPms d)
-                  (>! d 1) ))
+                                        ; writing created org to db
+        (go (let [x      (<! d)
+                  orgRaw (js->clj (.-state organizationCljs) :keywordize-keys true)
+                  orgRax (assoc orgRaw :name (:name (:profile orgRaw)))
+                  orgPms (dissoc orgRax :abi :systemAgent :balance)]
+              (println "state(o):" orgRax)
+              (writeOrg db orgPms d)
+              (>! d 1) ))
 
-            ; closing db
-            (go (let [x (<! d)]
-                  (println "Close.")
-                  (.close db) ))
-            )
-          )
+                                        ; closing db
+        (go (let [x (<! d)]
+              (println "Close database.")
+              (.close db) ))
         )
+      )
+    )
   )
 
 (set! *main-cli-fn* -main)

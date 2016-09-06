@@ -10,10 +10,22 @@
     :default "http://127.0.0.1:8545"
     ]
    ["-n" "--name NameOfOrganization" "Organization's name"
-    :id :name
-    :default "TestOrg"
+    :id :orgPostfix
+    :default (str "Org_" (utils/fixed-length-password 4))
     ]
+   ["-u" "--unlock" "Unlock coinbase"
+    :id :unlockCB]   
    ["-h" "--help"]])
 
 (defn parseOpts [args]
     (parse-opts args cli-options) )
+
+(defn checkHelp [x o]
+  (or (not (nil? (x :errors))) (contains? o :help)) )
+
+(defn showHowTo [x]
+  (do (println (:errors x) "\n" "How to use:")
+      (utils/nprint (:summary x))
+      (println "")
+      (.exit js/process 1))
+  )

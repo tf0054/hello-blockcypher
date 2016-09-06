@@ -8,8 +8,11 @@
                  [org.clojure/tools.cli "0.3.5"]
                  ;
                  [pointslope/remit "0.2.0"]
+                 [com.cemerick/piggieback "0.2.1"]
+                 [org.clojure/tools.nrepl "0.2.10"]
                 ]
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
+  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
   :plugins [[lein-npm "0.6.2"]
             [lein-cljsbuild "1.1.4"]
            ]
