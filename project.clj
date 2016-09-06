@@ -20,11 +20,16 @@
                        [xmlhttprequest "1.8.0"]
                        [utf8 "2.1.1"]
                        [crypto-js "3.1.6"]
-                       [bignumber.js "2.4.0"]
-                       [web3 "0.16.0"]
                        [sqlite3 "3.1.4"]
                        [node-localstorage "1.3.0"]
                        [log4js "0.6.38"]
+                       ; From release0818
+                       [bignumber.js "2.4.0"]
+                       [web3 "0.16.0"]
+                       [react "15.0.2"]
+                       [react-bootstrap "0.29.4"]
+                       [react-dom "15.0.2"]
+                       [moment "2.13.0"]
                       ]}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release"]
