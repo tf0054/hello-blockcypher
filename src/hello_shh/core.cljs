@@ -7,12 +7,13 @@
             [cljs.core.async :as async :refer [timeout chan <! >!]]
             [cljs-callback-heaven.core :as h]
             [hello-shh.args :as args]
-            ;[hello-shh.utils :as utils]
+            [hello-shh.utils :as utils]
             [hello-shh.organization :as organization]
             ))
 
 (nodejs/enable-util-print!)
 
+(def web3obj (nodejs/require "web3"))
 (def log4js (nodejs/require "log4js"))
 (def sqlite3 (nodejs/require "sqlite3"))
 
@@ -69,11 +70,37 @@
       
       (mkMap db "sys" db-locl c)
 
+      (let [web3     (web3obj.)
+            web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
+            ]
+                                        ; init web3
+        (.setProvider web3 web3prov)
+
+        (let [eth      (.-eth web3)
+              coinbase (.-coinbase eth)]
+
+          (go (let [_ (<! c)]
+                (if (:unlockCB @db-args)
+                  (do (println "unlocking coinbase.." coinbase)
+                      (utils/unlockAccount web3 coinbase "password" 3600))
+                  (println "Skipped unlock coinbase"))
+                (>! c 1))
+              )
+          )
+        )
+      
       (go (let [d (chan)
-                x (<! c)]
-            (organization/createOrg db-args db-locl db d)
-            (organization/createOrg db-args db-locl db d)
-            (>! c [(<! d) (<! d)]) 
+                x (<! c)
+                num 4
+                res []]
+           (into [] (for [_ (range num)]
+                      (organization/createOrg db-args db-locl db d) ))
+   
+           (>! c (<! (async/take 4 d 4))
+               ;; [(<! d) (<! d) (<! d)
+               ;;  (<! d)]
+               )
+            
             ))
       
       (go (let [x (<! c)]

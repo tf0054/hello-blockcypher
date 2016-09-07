@@ -59,11 +59,6 @@
 
         (go (>! d 1))
 
-        (<? (if (:unlockCB @db-args)
-              (do (println "unlocking coinbase.." coinbase)
-                  (utils/unlockAccount web3 coinbase "password" 3600))
-              (println "Skipped unlock coinbase")) "ERR" d)
-
                                         ; create account
         (go (let [x (<! d)]
               (println "creating... new")
@@ -90,7 +85,7 @@
                                                 :onSave #(.saveProfile organizationCljs %1)}))]
                 (utils/replaceWebFuncs oprofileCljs)
                 (.nameChange oprofileCljs (mkStateVal
-                                           (str (:orgPostfix @db-args))))
+                                    (utils/fixed-length-password 4)))
                 (.saveClick oprofileCljs))
               (>! d 1) ))
 

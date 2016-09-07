@@ -9,10 +9,10 @@
     :id :geth
     :default "http://127.0.0.1:8545"
     ]
-   ["-n" "--name NameOfOrganization" "Organization's name"
-    :id :orgPostfix
-    :default (str "Org_" (utils/fixed-length-password 4))
-    ]
+   ;; ["-n" "--name NameOfOrganization" "Organization's name"
+   ;;  :id :orgPostfix
+   ;;  :default (str "Org_" (utils/fixed-length-password 4))
+   ;;  ]
    ["-u" "--unlock" "Unlock coinbase"
     :id :unlockCB]   
    ["-h" "--help"]])
