@@ -69,8 +69,11 @@
       
       (mkMap db "sys" db-locl c)
 
-      (go (let [x (<! c)]
-             (organization/createOrg db-args db-locl db c)
+      (go (let [d (chan)
+                x (<! c)]
+            (organization/createOrg db-args db-locl db d)
+            (organization/createOrg db-args db-locl db d)
+            (>! c [(<! d) (<! d)]) 
             ))
       
       (go (let [x (<! c)]

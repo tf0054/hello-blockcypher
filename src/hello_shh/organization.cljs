@@ -41,8 +41,6 @@
   )
 
 (defn createOrg [db-args db-locl db c]
-
-                                        ; main
     (let [web3     (web3obj.)
           web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
           d        (chan 1)]
@@ -126,7 +124,6 @@
                   orgRaw (js->clj (.-state organizationCljs) :keywordize-keys true)
                   orgRax (assoc orgRaw :name (:name (:profile orgRaw)))
                   orgPms (dissoc orgRax :abi :systemAgent :balance)]
-              (println "state(o):" orgRax)
               (writeOrg db orgPms d)
               (>! c orgPms)  ))
         )
