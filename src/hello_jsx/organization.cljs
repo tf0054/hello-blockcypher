@@ -1,4 +1,4 @@
-(ns hello-shh.organization
+(ns hello-jsx.organization
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]]
                    [cljs-callback-heaven.macros :refer [<?]]
                    )
@@ -8,8 +8,8 @@
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
             [cljs-callback-heaven.core :as h]
-            [hello-shh.utils :as utils]
-            [hello-shh.express :as express]
+            [hello-jsx.utils :as utils]
+            [hello-jsx.express :as express]
             ))
 
 (def web3obj (nodejs/require "web3"))

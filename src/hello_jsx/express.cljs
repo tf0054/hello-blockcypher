@@ -1,8 +1,8 @@
-(ns hello-shh.express
+(ns hello-jsx.express
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
   (:require [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [hello-shh.utils :as utils]
+            [hello-jsx.utils :as utils]
             ))
 
 (def fs (nodejs/require "fs"))
@@ -37,7 +37,6 @@
 (defn startHttpd [x]
     (let [app (express)]
         (reset! ls-db x)
-        ;
         (.engine app "mustache" (mustacheExpress))
         ; set template engine
         (.set app "view engine" "mustache")

@@ -1,4 +1,4 @@
-(ns hello-shh.core
+(ns hello-jsx.core
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
   (:require [goog.string :as gstring]
             [goog.string.format]
@@ -6,9 +6,9 @@
             [cljs.nodejs :as nodejs]
             [cljs.core.async :as async :refer [timeout chan <! >!]]
             [cljs-callback-heaven.core :as h]
-            [hello-shh.args :as args]
-            [hello-shh.utils :as utils]
-            [hello-shh.organization :as organization]
+            [hello-jsx.args :as args]
+            [hello-jsx.utils :as utils]
+            [hello-jsx.organization :as organization]
             ))
 
 (nodejs/enable-util-print!)
@@ -29,9 +29,11 @@
     (set! (.-localStorage js/global) ls) )
                                         ; replace console.log
   (let [logger (.getLogger log4js) ]
+    (set! (.-category logger) "")
     (set! (.-console js/global) logger)
     (set! (.-log (.-console js/global))
-          (fn [t & x] 
+          (fn [t & x]
+            ;(println "Caller:" (this-as my-this (.toString my-this)) )
             (.debug logger (if (> (count x) 0)
                              (goog.string.format t x)
                              t) )) ))
@@ -65,49 +67,42 @@
     
     (let [_db (.-Database sqlite3)
           db  (new _db "test.db")
-          c   (chan)
-          ]
+          web3     (web3obj.)
+          web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
+          c   (chan)]
       
       (mkMap db "sys" db-locl c)
-
-      (let [web3     (web3obj.)
-            web3prov (web3obj.providers.HttpProvider. (:geth @db-args))
-            ]
-                                        ; init web3
-        (.setProvider web3 web3prov)
-
-        (let [eth      (.-eth web3)
-              coinbase (.-coinbase eth)]
-
-          (go (let [_ (<! c)]
-                (if (:unlockCB @db-args)
-                  (do (println "unlocking coinbase.." coinbase)
-                      (utils/unlockAccount web3 coinbase "password" 3600))
-                  (println "Skipped unlock coinbase"))
-                (>! c 1))
-              )
+      (.setProvider web3 web3prov)
+                                        ; unlock coinbase
+      (go (let [_ (<! c)
+                coinbase (.-coinbase (.-eth web3))]
+            (if (:unlockCB @db-args)
+              (do (println "unlocking coinbase.." coinbase)
+                  (utils/unlockAccount web3 coinbase "password" 3600))
+              (println "Skipped unlock coinbase"))
+            (>! c 1))
           )
-        )
-      
-      (go (let [d (chan)
-                x (<! c)
-                num 4
-                res []]
-           (into [] (for [_ (range num)]
-                      (organization/createOrg db-args db-locl db d) ))
-   
-           (>! c (<! (async/take 4 d 4))
-               ;; [(<! d) (<! d) (<! d)
-               ;;  (<! d)]
-               )
-            
-            ))
+
+      (go (let [_ (<! c)
+                d (chan)
+                r (atom ())]
+            (println "Kicking creating(s)..")
+
+            (dotimes [_ (:numOfOrg @db-args)]
+              (organization/createOrg db-args db-locl db d))
+
+            (dotimes [_ (:numOfOrg @db-args)]
+              (swap! r conj (<! d)) )
+
+            (>! c @r))
+          )
       
       (go (let [x (<! c)]
             (println "Created org" x)
             (println "Close database.")
-            (.close db) 
-            ))
+            (.close db)
+            )
+          )
       )
     )
   )

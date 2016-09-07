@@ -38,7 +38,7 @@
   :clean-targets ["out" "release"]
   :target-path "target"
   :cljsbuild {:builds {:app {:source-paths ["src"]
-                             :compiler {:output-to "release/hello_shh.js"
+                             :compiler {:output-to "release/hello_jsx.js"
                                         :output-dir "release"
                                       ; :optimizations :simple
                                         :optimizations :none
@@ -46,4 +46,4 @@
                                         :verbose true
                                         :libs [
                                           "node/applicant/Applicant2.js"]
-                                        :main hello-shh.core}}}})
+                                        :main hello-jsx.core}}}})

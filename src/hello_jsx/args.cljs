@@ -1,6 +1,6 @@
-(ns hello-shh.args
+(ns hello-jsx.args
   (:require [cljs.tools.cli :refer [parse-opts]]
-            [hello-shh.utils :as utils]
+            [hello-jsx.utils :as utils]
             ))
 
 ; https://github.com/clojure/tools.cli
@@ -9,10 +9,10 @@
     :id :geth
     :default "http://127.0.0.1:8545"
     ]
-   ;; ["-n" "--name NameOfOrganization" "Organization's name"
-   ;;  :id :orgPostfix
-   ;;  :default (str "Org_" (utils/fixed-length-password 4))
-   ;;  ]
+   ["-n" "--number How many orgs should be prepared?" "Number of orgs prepared"
+    :id :numOfOrg
+    :default 2
+    ]
    ["-u" "--unlock" "Unlock coinbase"
     :id :unlockCB]   
    ["-h" "--help"]])

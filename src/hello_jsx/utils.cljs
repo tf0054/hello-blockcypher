@@ -1,4 +1,4 @@
-(ns hello-shh.utils
+(ns hello-jsx.utils
   (:require-macros [cljs.core.async.macros :as m :refer [go go-loop]])
   (:require [cljs.core.async :as async :refer [timeout chan <! >!]]
             [cljs.nodejs :as nodejs]
