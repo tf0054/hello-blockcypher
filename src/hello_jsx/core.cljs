@@ -8,6 +8,7 @@
             [cljs-callback-heaven.core :as h]
             [hello-jsx.args :as args]
             [hello-jsx.utils :as utils]
+            [hello-jsx.express :as express]
             [hello-jsx.organization :as organization]
             ))
 
@@ -73,6 +74,11 @@
       
       (mkMap db "sys" db-locl c)
       (.setProvider web3 web3prov)
+
+      (go (let [_ (<! c)]
+            (express/startHttpd @db-locl))
+          (>! c 1)
+          )
                                         ; unlock coinbase
       (go (let [_ (<! c)
                 coinbase (.-coinbase (.-eth web3))]
