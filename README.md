@@ -1,4 +1,4 @@
-# hello-jsx
+# hello-blockcypher
 
 FIXME: Write a one-line description of your library/project.
 
@@ -7,10 +7,9 @@ FIXME: Write a one-line description of your library/project.
 FIXME: Write a paragraph about the library/project and highlight its goals.
 
 ## run!
-http://localhost:8080/resume-db/organization2.html
 ```
 lein deps
-node release/hello_npm.js
+node release/hello_blockcypher.js
 ```
 
 ## Setup

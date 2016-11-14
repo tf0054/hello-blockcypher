@@ -17,6 +17,7 @@
             [lein-cljsbuild "1.1.4"]
            ]
   :npm {:dependencies [[blockcypher "0.2.0"]
+[log4js "0.6.38"]
                       ]}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release"]
