@@ -1,4 +1,4 @@
-(defproject hello-jsx "0.1.0-SNAPSHOT"
+(defproject hello-blockcypher "0.1.0-SNAPSHOT"
   :description "FIXME: write this!"
   :url "http://example.com/FIXME"
   :dependencies [[org.clojure/clojure "1.8.0"]
@@ -16,34 +16,16 @@
   :plugins [[lein-npm "0.6.2"]
             [lein-cljsbuild "1.1.4"]
            ]
-  :npm {:dependencies [[source-map-support "0.3.2"]
-                       [mustache-express "1.2.2"]
-                       [express "4.14.0"]
-                       [opn "4.0.2"]
-                       [xmlhttprequest "1.8.0"]
-                       [utf8 "2.1.1"]
-                       [crypto-js "3.1.6"]
-                       [sqlite3 "3.1.4"]
-                       [node-localstorage "1.3.0"]
-                       [log4js "0.6.38"]
-                       ; From release0818
-                       [bignumber.js "2.4.0"]
-                       [web3 "0.16.0"]
-                       [react "15.0.2"]
-                       [react-bootstrap "0.29.4"]
-                       [react-dom "15.0.2"]
-                       [moment "2.13.0"]
+  :npm {:dependencies [[blockcypher "0.2.0"]
                       ]}
   :source-paths ["src" "target/classes"]
   :clean-targets ["out" "release"]
   :target-path "target"
   :cljsbuild {:builds {:app {:source-paths ["src"]
-                             :compiler {:output-to "release/hello_jsx.js"
+                             :compiler {:output-to "release/hello_blockcypher.js"
                                         :output-dir "release"
                                       ; :optimizations :simple
                                         :optimizations :none
                                         :target :nodejs
                                         :verbose true
-                                        :libs [
-                                          "node/applicant/Applicant2.js"]
-                                        :main hello-jsx.core}}}})
+                                        :main hello-blockcypher.core}}}})
